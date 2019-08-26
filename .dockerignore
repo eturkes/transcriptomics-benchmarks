@@ -1,0 +1,12 @@
+gdrive
+.git
+R
+assets
+COPYING
+docker-compose.yml
+.gitignore
+NOTICE
+README.md
+results
+transcriptomics-benchmarks.bib
+transcriptomics-benchmarks.Rproj
