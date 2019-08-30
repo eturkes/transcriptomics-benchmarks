@@ -16,7 +16,5 @@
 #
 #    Emir Turkes can be contacted at eturkes@bu.edu
 
-rmarkdown::render(
-  "01_original_data.Rmd",
-  output_file = "../results/01-original-data.html"
-)
+rmarkdown::render("01_original_data.Rmd", output_file = "../results/01-original-data.html")
+rmarkdown::render("02_pca.Rmd", output_file = "../results/02-pca.html")

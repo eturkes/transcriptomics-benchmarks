@@ -1,0 +1,345 @@
+---
+title: "02 PCA"
+author:
+  - name: "Emir Turkes [et2628@cumc.columbia.edu]"
+  - name: "Columbia University"
+date: '`r strftime(Sys.time(), format = "%B %d, %Y")`'
+bibliography: "../transcriptomics-benchmarks.bib"
+biblio-style: apalike
+link-citations: true
+output:
+  html_document:
+    code_folding: show
+    number_sections: true
+    theme: lumen
+    highlight: haddock
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+knit:
+  (function(inputFile, encoding) {
+    rmarkdown::render(
+      inputFile, encoding = encoding, output_file = "../results/02-pca.html")})
+---
+
+```{r, include = FALSE}
+#    This file is part of transcriptomics-benchmarks.
+#    Copyright (C) 2019  Emir Turkes
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#    Emir Turkes can be contacted at emir.turkes@eturkes.com
+
+knitr::opts_chunk$set(fig.width = 8.5, fig.height = 7)
+```
+
+<style type="text/css">
+body {font-size: 16px;}
+h1.title {font-size: 35px;}
+h1 {font-size: 24px;}
+h2 {font-size: 22px;}
+h3 {font-size: 20px;}
+.toc-content {padding-left: 0px; padding-right: 0px;}
+div.tocify {width: 100%;}
+.tocify-subheader .tocify-item {font-size: 0.95em; padding-left: 25px; text-indent: 0;}
+.tocify-subheader .tocify-subheader .tocify-item {
+  font-size: 0.90em; padding-left: 35px; text-indent: 0;}
+div.main-container {max-width: none; width: 100%;}
+</style>
+
+*This file is a part of the [Transcriptomics Benchmarks Project](https://github.com/eturkes/transcriptomics-benchmarks).*
+
+This report assesses the performance of several PCA methods.
+Please see @tsuyuzaki_benchmarking_2019 for a good review of methods used in scRNAseq.
+We start by setting some global variables and loading in any required packages.
+
+```{r}
+assets_dir <- file.path(getwd(), "..", "assets")
+results_dir <- file.path(getwd(), "..", "results")
+
+packages <- c(
+  "conflicted", "SingleCellExperiment", "magrittr", "dplyr", "ggplot2", "ggrepel", "S4Vectors",
+  "SummarizedExperiment", "DropletUtils", "scran", "BiocSingular", "scater", "Rtsne", "svd",
+  "SC3", "DT", "data.table", "Seurat", "uwot", "viridis")
+invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
+
+conflict_prefer("which", "BiocGenerics")
+options(stringsAsFactors = FALSE)
+
+# Create a unique cache and results data directory for each iterated section.
+if (!dir.exists(file.path(assets_dir, "cache", "02"))) {
+  dir.create(file.path(assets_dir, "cache", "02"), recursive = TRUE)}
+if (!dir.exists(file.path(results_dir, "data", "02"))) {
+  dir.create(file.path(results_dir, "data", "02"), recursive = TRUE)}
+
+# ggplot2 function providing custom aesthetics and automatic placement of categorical labels.
+# For continuous data, a colorbar is implemented.
+dim_red_plot <- function(data, x, y, col, type) {
+  gg <- ggplot(data, aes_string(x = x, y = y, color = col)) +
+    geom_point(alpha = 0.35, stroke = 0.05, shape = 21, aes_string(fill = col)) +
+    theme_classic() +
+    theme(
+      legend.position = "right", plot.title = element_text(hjust = 0.5),
+      legend.title = element_blank()) +
+    guides(color = guide_legend(override.aes = list(alpha = 1)))
+    if (type == "cat") {
+      gg <- gg + geom_label_repel(data = label_df2, aes(label = label), show.legend = FALSE)
+    } else if (type == "cont") {
+      gg <- ggplot(data, aes_string(x = x, y = y)) +
+        geom_point(alpha = 0.35, stroke = 0.05, aes_string(color = col)) +
+        theme_classic() +
+        theme(
+          legend.position = "right", plot.title = element_text(hjust = 0.5),
+          legend.title = element_blank()) +
+        scale_colour_viridis()}
+  gg}
+
+# Adds download buttons.
+datatable_custom <- function(dt) {
+  datatable(
+    dt,
+    extensions = "Buttons", options = list(dom = "Blfrtip", buttons = list(
+      "copy", "print",
+      list(extend = "collection", buttons = c("csv", "excel", "pdf"), text = "Download"))))}
+```
+
+We use the SCE object from the analysis in [github.com/eturkes/habib-2017-snRNAseq](https://github.com/eturkes/habib-2017-snRNAseq) and subset it for speed of processing and easier interpretability.
+
+```{r}
+sce <- readRDS(file.path(assets_dir, "habib-2017-snRNAseq", "sce.rds"))
+c_types <- "exPFC|exCA|GABA"
+keep <- grepl(c_types, colData(sce)$habib_cluster_name)
+sce <- sce[ , keep]
+sce
+```
+
+# QC
+
+## Lowly Expressed Genes
+
+We remove genes that are now lowly expressed after the subset.
+
+```{r}
+sce <- calculateQCMetrics(sce)
+detected_genes <- rowSums(counts(sce) >= 2)
+sce <- sce[which(detected_genes >= 10), ]
+dim(sce)[1]
+```
+
+## Normalization
+
+Due to the change in dimensions from subsetting, we renormalize.
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "quickCluster.rds")
+if (file.exists(rds)) {
+  quickCluster <- readRDS(rds)
+} else {
+  set.seed(1)
+  quickCluster <- quickCluster(sce, use.ranks = FALSE, BSPARAM = IrlbaParam())
+  saveRDS(quickCluster, rds)}
+```
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "size_factors.rds")
+if (file.exists(rds)) {
+  size_factors <- readRDS(rds)
+} else {
+  size_factors <- computeSumFactors(sce, cluster = quickCluster, min.mean = 0.1)
+  saveRDS(size_factors, rds)}
+```
+
+```{r}
+sce <- normalize(sce)
+rm(size_factors)
+```
+
+# PROPACK SVD
+
+We use PROPACK SVD to generate PCs, similar to the implementation used in GiniClust2 [@tsoucas_giniclust2_2018].
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "ppk.rds")
+if (file.exists(rds)) {
+  ppk <- readRDS(rds)
+} else {
+  set.seed(1)
+  ppk <- propack.svd(scale(t(as.matrix(logcounts(sce)))), neig = 50)
+  saveRDS(ppk, rds)}
+```
+
+```{r}
+pca <- t(ppk$d * t(ppk$u))
+par(mfrow = c(1, 1))
+plot(
+  log10(ppk$d), xlab = "PC", ylab = "log10(Proportion of Variance Explained)",
+  pch = 20, cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
+abline(v = 10, lty = 2, col = "red")
+abline(v = 20, lty = 2, col = "red")
+abline(v = 30, lty = 2, col = "red")
+```
+
+## 10 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "ppk10_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(pca[ , 1:10], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_ppk10_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_ppk10_umap1 = add_df$sub_ppk10_umap1, sub_ppk10_umap2 = add_df$sub_ppk10_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(sub_ppk10_umap1 = median(sub_ppk10_umap1), sub_ppk10_umap2 = median(sub_ppk10_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_ppk10_umap1", y = "sub_ppk10_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset PPK 10 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_ppk10_umap1", y = "sub_ppk10_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset PPK 10 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_ppk10_umap1", y = "sub_ppk10_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) PPK 10 UMAP")
+```
+
+## 20 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "ppk20_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(pca[ , 1:20], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_ppk20_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_ppk20_umap1 = add_df$sub_ppk20_umap1, sub_ppk20_umap2 = add_df$sub_ppk20_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(sub_ppk20_umap1 = median(sub_ppk20_umap1), sub_ppk20_umap2 = median(sub_ppk20_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_ppk20_umap1", y = "sub_ppk20_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset PPK 20 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_ppk20_umap1", y = "sub_ppk20_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset PPK 20 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_ppk20_umap1", y = "sub_ppk20_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) PPK 20 UMAP")
+```
+
+## 30 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "ppk30_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(pca[ , 1:30], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_ppk30_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_ppk30_umap1 = add_df$sub_ppk30_umap1, sub_ppk30_umap2 = add_df$sub_ppk30_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(sub_ppk30_umap1 = median(sub_ppk30_umap1), sub_ppk30_umap2 = median(sub_ppk30_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_ppk30_umap1", y = "sub_ppk30_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset PPK 30 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_ppk30_umap1", y = "sub_ppk30_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset PPK 30 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_ppk30_umap1", y = "sub_ppk30_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) PPK 30 UMAP")
+```
+
+# References
+
+This is the concluding section of the document. Here we write relevant results to disk, output the sessionInfo, and create a bibliography for works cited.
+
+```{r}
+sessionInfo()
+```
