@@ -1,0 +1,201 @@
+---
+title: "01 Original Data"
+author:
+  - name: "Emir Turkes [et2628@cumc.columbia.edu]"
+  - name: "Columbia University"
+date: '`r strftime(Sys.time(), format = "%B %d, %Y")`'
+bibliography: "../transcriptomics-benchmarks.bib"
+biblio-style: apalike
+link-citations: true
+output:
+  html_document:
+    code_folding: show
+    number_sections: true
+    theme: lumen
+    highlight: haddock
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+knit:
+  (function(inputFile, encoding) {
+    rmarkdown::render(
+      inputFile, encoding = encoding, output_file = "../results/01-original-data.html")})
+---
+
+```{r, include = FALSE}
+#    This file is part of transcriptomics-benchmarks.
+#    Copyright (C) 2019  Emir Turkes
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#    Emir Turkes can be contacted at emir.turkes@eturkes.com
+
+knitr::opts_chunk$set(fig.width = 8.5, fig.height = 7)
+```
+
+<style type="text/css">
+body {font-size: 16px;}
+h1.title {font-size: 35px;}
+h1 {font-size: 24px;}
+h2 {font-size: 22px;}
+h3 {font-size: 20px;}
+.toc-content {padding-left: 0px; padding-right: 0px;}
+div.tocify {width: 100%;}
+.tocify-subheader .tocify-item {font-size: 0.95em; padding-left: 25px; text-indent: 0;}
+div.main-container {max-width: none; width: 100%;}
+</style>
+
+*This file is a part of the [Transcriptomics Benchmarks Project](https://github.com/eturkes/transcriptomics-benchmarks).*
+
+In this project we apply benchmarks on the cleaned dataset derived from the analysis in [github.com/eturkes/habib-2017-snRNAseq](https://github.com/eturkes/habib-2017-snRNAseq), which uses droplet-based UMI data from @habib_massively_2017.
+In this particular document we simply view the dataset before analysis.
+We start by setting some global variables and loading in any required packages.
+
+```{r}
+assets_dir <- file.path(getwd(), "..", "assets")
+results_dir <- file.path(getwd(), "..", "results")
+
+packages <- c(
+  "conflicted", "SingleCellExperiment", "magrittr", "dplyr", "ggplot2", "ggrepel", "S4Vectors",
+  "SummarizedExperiment", "DropletUtils", "scran", "BiocSingular", "scater", "Rtsne", "svd",
+  "SC3", "DT", "data.table", "Seurat", "uwot", "viridis")
+invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
+
+conflict_prefer("which", "BiocGenerics")
+options(stringsAsFactors = FALSE)
+
+# Create a unique cache and results data directory for each iterated section.
+if (!dir.exists(file.path(assets_dir, "cache", "01"))) {
+  dir.create(file.path(assets_dir, "cache", "01"), recursive = TRUE)}
+if (!dir.exists(file.path(results_dir, "data", "01"))) {
+  dir.create(file.path(results_dir, "data", "01"), recursive = TRUE)}
+
+# ggplot2 function providing custom aesthetics and automatic placement of categorical labels.
+# For continuous data, a colorbar is implemented.
+dim_red_plot <- function(data, x, y, col, type) {
+  gg <- ggplot(data, aes_string(x = x, y = y, color = col)) +
+    geom_point(alpha = 0.35, stroke = 0.05, shape = 21, aes_string(fill = col)) +
+    theme_classic() +
+    theme(
+      legend.position = "right", plot.title = element_text(hjust = 0.5),
+      legend.title = element_blank()) +
+    guides(color = guide_legend(override.aes = list(alpha = 1)))
+    if (type == "cat") {
+      gg <- gg + geom_label_repel(data = label_df2, aes(label = label), show.legend = FALSE)
+    } else if (type == "cont") {
+      gg <- ggplot(data, aes_string(x = x, y = y)) +
+        geom_point(alpha = 0.35, stroke = 0.05, aes_string(color = col)) +
+        theme_classic() +
+        theme(
+          legend.position = "right", plot.title = element_text(hjust = 0.5),
+          legend.title = element_blank()) +
+        scale_colour_viridis()}
+  gg}
+```
+
+# Original Data
+
+As cluster labels and tSNE coordinates were released by the authors, Figure 2a and 2b were recreated in the analysis, along with their successful replication in addition to Figure 2d.
+Please see the analysis for details of the processing, which was performed in close accordance to what was done in @habib_massively_2017.
+
+```{r}
+sce <- readRDS(file.path(assets_dir, "habib-2017-snRNAseq", "sce.rds"))
+sce
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    paste0("habib_tsne", 1:2), paste0("hvg_tsne", 1:2),
+    "habib_cluster_name", "seurat_hvg_clusters_name")])
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+gg_df$seurat_hvg_clusters_name <- factor(gg_df$seurat_hvg_clusters_name)
+```
+
+### Habib Clusters Habib tSNE
+
+```{r}
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name), label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(habib_tsne1 = median(habib_tsne1), habib_tsne2 = median(habib_tsne2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "habib_tsne1", y = "habib_tsne2",col = "habib_cluster_name", type = "cat") +
+  xlab("tSNE 1") + ylab("tSNE 2") + ggtitle("Habib Clusters Habib tSNE")
+```
+
+### HVG Seurat Clusters Habib tSNE
+
+```{r}
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  seurat_hvg_clusters_name = levels(gg_df$seurat_hvg_clusters_name),
+  label = levels(gg_df$seurat_hvg_clusters_name))
+label_df2 <- gg_df %>%
+  group_by(seurat_hvg_clusters_name) %>%
+  summarize(habib_tsne1 = median(habib_tsne1), habib_tsne2 = median(habib_tsne2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "habib_tsne1", y = "habib_tsne2",
+  col = "seurat_hvg_clusters_name", type = "cat") +
+  xlab("tSNE 1") + ylab("tSNE 2") + ggtitle("HVG Seurat Clusters Habib tSNE")
+```
+
+### HVG Seurat Clusters HVG tSNE
+
+```{r}
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  seurat_hvg_clusters_name = levels(gg_df$seurat_hvg_clusters_name),
+  label = levels(gg_df$seurat_hvg_clusters_name))
+label_df2 <- gg_df %>%
+  group_by(seurat_hvg_clusters_name) %>%
+  summarize(hvg_tsne1 = median(hvg_tsne1), hvg_tsne2 = median(hvg_tsne2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "hvg_tsne1", y = "hvg_tsne2", col = "seurat_hvg_clusters_name", type = "cat") +
+  xlab("tSNE 1") + ylab("tSNE 2") + ggtitle("HVG Seurat Clusters HVG tSNE")
+```
+
+### Habib Clusters HVG tSNE
+
+```{r}
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name), label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(hvg_tsne1 = median(hvg_tsne1), hvg_tsne2 = median(hvg_tsne2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "hvg_tsne1", y = "hvg_tsne2", col = "habib_cluster_name", type = "cat") +
+  xlab("tSNE 1") + ylab("tSNE 2") + ggtitle("Habib Clusters HVG tSNE")
+```
+
+# References
+
+This is the concluding section of the document. Here we write relevant results to disk, output the sessionInfo, and create a bibliography for works cited.
+
+```{r}
+sessionInfo()
+```
