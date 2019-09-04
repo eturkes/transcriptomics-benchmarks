@@ -167,7 +167,7 @@ sce <- normalize(sce)
 rm(size_factors)
 ```
 
-# PROPACK SVD
+# propack.svd
 
 We use PROPACK SVD to generate PCs, similar to the implementation used in GiniClust2 [@tsoucas_giniclust2_2018].
 
@@ -396,15 +396,15 @@ label_df2 <- gg_df %>%
 dim_red_plot(
   data = gg_df, x = "sub_rpca10_umap1", y = "sub_rpca10_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset PPK 10 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset rpca 10 UMAP")
 dim_red_plot(
   data = gg_df, x = "sub_rpca10_umap1", y = "sub_rpca10_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset PPK 10 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset rpca 10 UMAP")
 dim_red_plot(
   data = gg_df, x = "sub_rpca10_umap1", y = "sub_rpca10_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) PPK 10 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) rpca 10 UMAP")
 ```
 
 ## 20 PCs
@@ -447,15 +447,15 @@ label_df2 <- gg_df %>%
 dim_red_plot(
   data = gg_df, x = "sub_rpca20_umap1", y = "sub_rpca20_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset PPK 20 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset rpca 20 UMAP")
 dim_red_plot(
   data = gg_df, x = "sub_rpca20_umap1", y = "sub_rpca20_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset PPK 20 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset rpca 20 UMAP")
 dim_red_plot(
   data = gg_df, x = "sub_rpca20_umap1", y = "sub_rpca20_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) PPK 20 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) rpca 20 UMAP")
 ```
 
 ## 30 PCs
@@ -498,15 +498,542 @@ label_df2 <- gg_df %>%
 dim_red_plot(
   data = gg_df, x = "sub_rpca30_umap1", y = "sub_rpca30_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset PPK 30 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset rpca 30 UMAP")
 dim_red_plot(
   data = gg_df, x = "sub_rpca30_umap1", y = "sub_rpca30_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset PPK 30 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset rpca 30 UMAP")
 dim_red_plot(
   data = gg_df, x = "sub_rpca30_umap1", y = "sub_rpca30_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) PPK 30 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) rpca 30 UMAP")
+```
+
+# prcomp
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "prcomp.rds")
+if (file.exists(rds)) {
+  pca <- readRDS(rds)
+} else {
+  set.seed(1)
+  pca <- runPCA(sce, ncomponents = 50)
+  saveRDS(pca, rds)}
+```
+
+```{r}
+par(mfrow = c(1, 1))
+plot(
+  log10(attr(reducedDim(pca, "PCA"), "percentVar")), xlab = "PC",
+  ylab = "log10(Proportion of Variance Explained)", pch = 20,
+  cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
+abline(v = c(10, 20, 30), lty = 2, col = "red")
+```
+
+## 10 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "prcomp10_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(reducedDim(pca, "PCA")[ , 1:10], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_prcomp10_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_prcomp10_umap1 = add_df$sub_prcomp10_umap1,
+  sub_prcomp10_umap2 = add_df$sub_prcomp10_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(
+    sub_prcomp10_umap1 = median(sub_prcomp10_umap1),
+    sub_prcomp10_umap2 = median(sub_prcomp10_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_prcomp10_umap1", y = "sub_prcomp10_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset prcomp 10 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_prcomp10_umap1", y = "sub_prcomp10_umap2",
+  col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset prcomp 10 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_prcomp10_umap1", y = "sub_prcomp10_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) prcomp 10 UMAP")
+```
+
+## 20 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "prcomp20_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(reducedDim(pca, "PCA")[ , 1:20], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_prcomp20_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_prcomp20_umap1 = add_df$sub_prcomp20_umap1,
+  sub_prcomp20_umap2 = add_df$sub_prcomp20_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(
+    sub_prcomp20_umap1 = median(sub_prcomp20_umap1),
+    sub_prcomp20_umap2 = median(sub_prcomp20_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_prcomp20_umap1", y = "sub_prcomp20_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset prcomp 20 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_prcomp20_umap1", y = "sub_prcomp20_umap2",
+  col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset prcomp 20 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_prcomp20_umap1", y = "sub_prcomp20_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) prcomp 20 UMAP")
+```
+
+## 30 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "prcomp30_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(reducedDim(pca, "PCA")[ , 1:30], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_prcomp30_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_prcomp30_umap1 = add_df$sub_prcomp30_umap1,
+  sub_prcomp30_umap2 = add_df$sub_prcomp30_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(
+    sub_prcomp30_umap1 = median(sub_prcomp30_umap1),
+    sub_prcomp30_umap2 = median(sub_prcomp30_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_prcomp30_umap1", y = "sub_prcomp30_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset prcomp 30 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_prcomp30_umap1", y = "sub_prcomp30_umap2",
+  col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset prcomp 30 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_prcomp30_umap1", y = "sub_prcomp30_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) prcomp 30 UMAP")
+```
+
+# svd
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "svd.rds")
+if (file.exists(rds)) {
+  svd <- readRDS(rds)
+} else {
+  set.seed(1)
+  svd <- svd(scale(t(as.matrix(logcounts(sce)))), nv = 50)
+  saveRDS(svd, rds)}
+```
+
+```{r}
+pca <- t(svd$d * t(svd$u))
+par(mfrow = c(1, 1))
+plot(
+  log10(svd$d), xlab = "PC", ylab = "log10(Proportion of Variance Explained)",
+  pch = 20, cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
+abline(v = c(10, 20, 30), lty = 2, col = "red")
+```
+
+## 10 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "svd10_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(pca[ , 1:10], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_svd10_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_svd10_umap1 = add_df$sub_svd10_umap1, sub_svd10_umap2 = add_df$sub_svd10_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(sub_svd10_umap1 = median(sub_svd10_umap1), sub_svd10_umap2 = median(sub_svd10_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_svd10_umap1", y = "sub_svd10_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset SVD 10 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_svd10_umap1", y = "sub_svd10_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset SVD 10 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_svd10_umap1", y = "sub_svd10_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) SVD 10 UMAP")
+```
+
+## 20 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "svd20_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(pca[ , 1:20], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_svd20_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_svd20_umap1 = add_df$sub_svd20_umap1, sub_svd20_umap2 = add_df$sub_svd20_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(sub_svd20_umap1 = median(sub_svd20_umap1), sub_svd20_umap2 = median(sub_svd20_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_svd20_umap1", y = "sub_svd20_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset SVD 20 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_svd20_umap1", y = "sub_svd20_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset SVD 20 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_svd20_umap1", y = "sub_svd20_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) SVD 20 UMAP")
+```
+
+## 30 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "svd30_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(pca[ , 1:30], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_svd30_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_svd30_umap1 = add_df$sub_svd30_umap1, sub_svd30_umap2 = add_df$sub_svd30_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(sub_svd30_umap1 = median(sub_svd30_umap1), sub_svd30_umap2 = median(sub_svd30_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_svd30_umap1", y = "sub_svd30_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset SVD 30 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_svd30_umap1", y = "sub_svd30_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset SVD 30 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_svd30_umap1", y = "sub_svd30_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) SVD 30 UMAP")
+```
+
+# denoisePCA
+
+We apply the `denoisePCA` from the `scran` package, which can automatically select the number of PCs to retain by modeling technical noise.
+
+```{r}
+new_trend <- makeTechTrend(x = sce)
+```
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "denoise_pca.rds")
+if (file.exists(rds)) {
+  pca <- readRDS(rds)
+} else {
+  set.seed(1)
+  pca <- denoisePCA(sce, technical = new_trend, BSPARAM = IrlbaParam())
+  saveRDS(pca, rds)}
+```
+
+```{r}
+sce <- pca
+ncol(reducedDim(sce, "PCA"))
+par(mfrow = c(1, 1))
+plot(
+  log10(attr(reducedDim(sce), "percentVar")), xlab = "PC",
+  ylab = "log10(Proportion of Variance Explained)", pch = 20,
+  cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
+abline(v = c(10, 20, 30), lty = 2, col = "red")
+```
+
+## 10 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "denoise_pca10_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(reducedDim(pca, "PCA")[ , 1:10], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_denoise_pca10_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_denoise_pca10_umap1 = add_df$sub_denoise_pca10_umap1,
+  sub_denoise_pca10_umap2 = add_df$sub_denoise_pca10_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(
+    sub_denoise_pca10_umap1 = median(sub_denoise_pca10_umap1),
+    sub_denoise_pca10_umap2 = median(sub_denoise_pca10_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_denoise_pca10_umap1", y = "sub_denoise_pca10_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset denoisePCA 10 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_denoise_pca10_umap1", y = "sub_denoise_pca10_umap2",
+  col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset denoisePCA 10 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_denoise_pca10_umap1", y = "sub_denoise_pca10_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) denoisePCA 10 UMAP")
+```
+
+## 20 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "denoise_pca20_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(reducedDim(pca, "PCA")[ , 1:20], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_denoise_pca20_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_denoise_pca20_umap1 = add_df$sub_denoise_pca20_umap1,
+  sub_denoise_pca20_umap2 = add_df$sub_denoise_pca20_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(
+    sub_denoise_pca20_umap1 = median(sub_denoise_pca20_umap1),
+    sub_denoise_pca20_umap2 = median(sub_denoise_pca20_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_denoise_pca20_umap1", y = "sub_denoise_pca20_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset denoisePCA 20 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_denoise_pca20_umap1", y = "sub_denoise_pca20_umap2",
+  col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset denoisePCA 20 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_denoise_pca20_umap1", y = "sub_denoise_pca20_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) denoisePCA 20 UMAP")
+```
+
+## 30 PCs
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "denoise_pca30_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(reducedDim(pca, "PCA")[ , 1:30], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("sub_denoise_pca30_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), sub_denoise_pca30_umap1 = add_df$sub_denoise_pca30_umap1,
+  sub_denoise_pca30_umap2 = add_df$sub_denoise_pca30_umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(
+    sub_denoise_pca30_umap1 = median(sub_denoise_pca30_umap1),
+    sub_denoise_pca30_umap2 = median(sub_denoise_pca30_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "sub_denoise_pca30_umap1", y = "sub_denoise_pca30_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset denoisePCA 30 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_denoise_pca30_umap1", y = "sub_denoise_pca30_umap2",
+  col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset denoisePCA 30 UMAP")
+dim_red_plot(
+  data = gg_df, x = "sub_denoise_pca30_umap1", y = "sub_denoise_pca30_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) denoisePCA 30 UMAP")
 ```
 
 # References
