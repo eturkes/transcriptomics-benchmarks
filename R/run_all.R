@@ -18,10 +18,10 @@
 
 rmarkdown::render(
   "habib-2017-snRNAseq/01_original_data.Rmd",
-  output_file = "../results/habib-2017-snRNAseq/01-original-data.html"
+  output_file = "../../results/habib-2017-snRNAseq/01-original-data.html"
 )
 
 rmarkdown::render(
   "habib-2017-snRNAseq/02_pca.Rmd",
-  output_file = "../results/habib-2017-snRNAseq/02-pca.html"
+  output_file = "../../results/habib-2017-snRNAseq/02-pca.html"
 )
