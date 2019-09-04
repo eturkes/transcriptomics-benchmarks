@@ -16,5 +16,12 @@
 #
 #    Emir Turkes can be contacted at eturkes@bu.edu
 
-rmarkdown::render("01_original_data.Rmd", output_file = "../results/01-original-data.html")
-rmarkdown::render("02_pca.Rmd", output_file = "../results/02-pca.html")
+rmarkdown::render(
+  "habib-2017-snRNAseq/01_original_data.Rmd",
+  output_file = "../results/habib-2017-snRNAseq/01-original-data.html"
+)
+
+rmarkdown::render(
+  "habib-2017-snRNAseq/02_pca.Rmd",
+  output_file = "../results/habib-2017-snRNAseq/02-pca.html"
+)

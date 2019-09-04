@@ -21,7 +21,7 @@ output:
 knit:
   (function(inputFile, encoding) {
     rmarkdown::render(
-      inputFile, encoding = encoding, output_file = "../results/02-pca.html")})
+      inputFile, encoding = encoding, output_file = "../results/habib-2017-snRNAseq/02-pca.html")})
 ---
 
 ```{r, include = FALSE}
@@ -67,8 +67,8 @@ Please see @tsuyuzaki_benchmarking_2019 for a good review of methods used in scR
 We start by setting some global variables and loading in any required packages.
 
 ```{r}
-assets_dir <- file.path(getwd(), "..", "assets")
-results_dir <- file.path(getwd(), "..", "results")
+assets_dir <- file.path(getwd(), "..", "assets/habib-2017-snRNAseq")
+results_dir <- file.path(getwd(), "..", "results/habib-2017-snRNAseq")
 
 packages <- c(
   "conflicted", "SingleCellExperiment", "magrittr", "dplyr", "ggplot2", "ggrepel", "S4Vectors",
@@ -119,7 +119,7 @@ datatable_custom <- function(dt) {
 We use the SCE object from the analysis in [github.com/eturkes/habib-2017-snRNAseq](https://github.com/eturkes/habib-2017-snRNAseq) and subset it for speed of processing and easier interpretability.
 
 ```{r}
-sce <- readRDS(file.path(assets_dir, "habib-2017-snRNAseq", "sce.rds"))
+sce <- readRDS(file.path(assets_dir, "sce.rds"))
 c_types <- "exPFC|exCA|GABA"
 keep <- grepl(c_types, colData(sce)$habib_cluster_name)
 sce <- sce[ , keep]
