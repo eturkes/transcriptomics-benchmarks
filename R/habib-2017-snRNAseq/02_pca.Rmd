@@ -115,55 +115,11 @@ datatable_custom <- function(dt) {
       list(extend = "collection", buttons = c("csv", "excel", "pdf"), text = "Download"))))}
 ```
 
-We use the SCE object from the analysis in [github.com/eturkes/habib-2017-snRNAseq](https://github.com/eturkes/habib-2017-snRNAseq) and subset it for speed of processing and easier interpretability.
+We use the SCE object from the analysis in [github.com/eturkes/habib-2017-snRNAseq](https://github.com/eturkes/habib-2017-snRNAseq).
 
 ```{r}
 sce <- readRDS(file.path(assets_dir, "sce.rds"))
-c_types <- "exPFC|exCA|GABA"
-keep <- grepl(c_types, colData(sce)$habib_cluster_name)
-sce <- sce[ , keep]
 sce
-```
-
-# QC
-
-## Lowly Expressed Genes
-
-We remove genes that are now lowly expressed after the subset.
-
-```{r}
-sce <- calculateQCMetrics(sce)
-detected_genes <- rowSums(counts(sce) >= 2)
-sce <- sce[which(detected_genes >= 10), ]
-dim(sce)[1]
-```
-
-## Normalization
-
-Due to the change in dimensions from subsetting, we renormalize.
-
-```{r, cache = TRUE}
-rds <- file.path(assets_dir, "cache", "02", "quickCluster.rds")
-if (file.exists(rds)) {
-  quickCluster <- readRDS(rds)
-} else {
-  set.seed(1)
-  quickCluster <- quickCluster(sce, use.ranks = FALSE, BSPARAM = IrlbaParam())
-  saveRDS(quickCluster, rds)}
-```
-
-```{r, cache = TRUE}
-rds <- file.path(assets_dir, "cache", "02", "size_factors.rds")
-if (file.exists(rds)) {
-  size_factors <- readRDS(rds)
-} else {
-  size_factors <- computeSumFactors(sce, cluster = quickCluster, min.mean = 0.1)
-  saveRDS(size_factors, rds)}
-```
-
-```{r}
-sce <- normalize(sce)
-rm(size_factors)
 ```
 
 # prcomp
