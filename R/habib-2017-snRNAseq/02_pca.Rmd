@@ -158,10 +158,10 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_prcomp10_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("prcomp10_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_prcomp10_umap1 = add_df$sub_prcomp10_umap1,
-  sub_prcomp10_umap2 = add_df$sub_prcomp10_umap2)
+  colData(sce), prcomp10_umap1 = add_df$prcomp10_umap1,
+  prcomp10_umap2 = add_df$prcomp10_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -177,20 +177,20 @@ label_df <- data.frame(
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
   summarize(
-    sub_prcomp10_umap1 = median(sub_prcomp10_umap1),
-    sub_prcomp10_umap2 = median(sub_prcomp10_umap2)) %>%
+    prcomp10_umap1 = median(prcomp10_umap1),
+    prcomp10_umap2 = median(prcomp10_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_prcomp10_umap1", y = "sub_prcomp10_umap2",
+  data = gg_df, x = "prcomp10_umap1", y = "prcomp10_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset prcomp 10 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters prcomp 10 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_prcomp10_umap1", y = "sub_prcomp10_umap2",
+  data = gg_df, x = "prcomp10_umap1", y = "prcomp10_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset prcomp 10 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution prcomp 10 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_prcomp10_umap1", y = "sub_prcomp10_umap2",
+  data = gg_df, x = "prcomp10_umap1", y = "prcomp10_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) prcomp 10 UMAP")
 ```
@@ -210,10 +210,10 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_prcomp20_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("prcomp20_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_prcomp20_umap1 = add_df$sub_prcomp20_umap1,
-  sub_prcomp20_umap2 = add_df$sub_prcomp20_umap2)
+  colData(sce), prcomp20_umap1 = add_df$prcomp20_umap1,
+  prcomp20_umap2 = add_df$prcomp20_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -229,20 +229,20 @@ label_df <- data.frame(
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
   summarize(
-    sub_prcomp20_umap1 = median(sub_prcomp20_umap1),
-    sub_prcomp20_umap2 = median(sub_prcomp20_umap2)) %>%
+    prcomp20_umap1 = median(prcomp20_umap1),
+    prcomp20_umap2 = median(prcomp20_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_prcomp20_umap1", y = "sub_prcomp20_umap2",
+  data = gg_df, x = "prcomp20_umap1", y = "prcomp20_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset prcomp 20 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters prcomp 20 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_prcomp20_umap1", y = "sub_prcomp20_umap2",
+  data = gg_df, x = "prcomp20_umap1", y = "prcomp20_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset prcomp 20 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution prcomp 20 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_prcomp20_umap1", y = "sub_prcomp20_umap2",
+  data = gg_df, x = "prcomp20_umap1", y = "prcomp20_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) prcomp 20 UMAP")
 ```
@@ -262,10 +262,10 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_prcomp30_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("prcomp30_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_prcomp30_umap1 = add_df$sub_prcomp30_umap1,
-  sub_prcomp30_umap2 = add_df$sub_prcomp30_umap2)
+  colData(sce), prcomp30_umap1 = add_df$prcomp30_umap1,
+  prcomp30_umap2 = add_df$prcomp30_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -281,20 +281,20 @@ label_df <- data.frame(
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
   summarize(
-    sub_prcomp30_umap1 = median(sub_prcomp30_umap1),
-    sub_prcomp30_umap2 = median(sub_prcomp30_umap2)) %>%
+    prcomp30_umap1 = median(prcomp30_umap1),
+    prcomp30_umap2 = median(prcomp30_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_prcomp30_umap1", y = "sub_prcomp30_umap2",
+  data = gg_df, x = "prcomp30_umap1", y = "prcomp30_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset prcomp 30 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters prcomp 30 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_prcomp30_umap1", y = "sub_prcomp30_umap2",
+  data = gg_df, x = "prcomp30_umap1", y = "prcomp30_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset prcomp 30 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution prcomp 30 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_prcomp30_umap1", y = "sub_prcomp30_umap2",
+  data = gg_df, x = "prcomp30_umap1", y = "prcomp30_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) prcomp 30 UMAP")
 ```
@@ -336,10 +336,10 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_rpca10_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("rpca10_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_rpca10_umap1 = add_df$sub_rpca10_umap1,
-  sub_rpca10_umap2 = add_df$sub_rpca10_umap2)
+  colData(sce), rpca10_umap1 = add_df$rpca10_umap1,
+  rpca10_umap2 = add_df$rpca10_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -355,19 +355,19 @@ label_df <- data.frame(
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
   summarize(
-    sub_rpca10_umap1 = median(sub_rpca10_umap1), sub_rpca10_umap2 = median(sub_rpca10_umap2)) %>%
+    rpca10_umap1 = median(rpca10_umap1), rpca10_umap2 = median(rpca10_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_rpca10_umap1", y = "sub_rpca10_umap2",
+  data = gg_df, x = "rpca10_umap1", y = "rpca10_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset rpca 10 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters rpca 10 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_rpca10_umap1", y = "sub_rpca10_umap2",
+  data = gg_df, x = "rpca10_umap1", y = "rpca10_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset rpca 10 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution rpca 10 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_rpca10_umap1", y = "sub_rpca10_umap2",
+  data = gg_df, x = "rpca10_umap1", y = "rpca10_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) rpca 10 UMAP")
 ```
@@ -387,10 +387,10 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_rpca20_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("rpca20_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_rpca20_umap1 = add_df$sub_rpca20_umap1,
-  sub_rpca20_umap2 = add_df$sub_rpca20_umap2)
+  colData(sce), rpca20_umap1 = add_df$rpca20_umap1,
+  rpca20_umap2 = add_df$rpca20_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -406,19 +406,19 @@ label_df <- data.frame(
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
   summarize(
-    sub_rpca20_umap1 = median(sub_rpca20_umap1), sub_rpca20_umap2 = median(sub_rpca20_umap2)) %>%
+    rpca20_umap1 = median(rpca20_umap1), rpca20_umap2 = median(rpca20_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_rpca20_umap1", y = "sub_rpca20_umap2",
+  data = gg_df, x = "rpca20_umap1", y = "rpca20_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset rpca 20 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters rpca 20 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_rpca20_umap1", y = "sub_rpca20_umap2",
+  data = gg_df, x = "rpca20_umap1", y = "rpca20_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset rpca 20 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution rpca 20 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_rpca20_umap1", y = "sub_rpca20_umap2",
+  data = gg_df, x = "rpca20_umap1", y = "rpca20_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) rpca 20 UMAP")
 ```
@@ -438,10 +438,10 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_rpca30_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("rpca30_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_rpca30_umap1 = add_df$sub_rpca30_umap1,
-  sub_rpca30_umap2 = add_df$sub_rpca30_umap2)
+  colData(sce), rpca30_umap1 = add_df$rpca30_umap1,
+  rpca30_umap2 = add_df$rpca30_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -457,19 +457,19 @@ label_df <- data.frame(
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
   summarize(
-    sub_rpca30_umap1 = median(sub_rpca30_umap1), sub_rpca30_umap2 = median(sub_rpca30_umap2)) %>%
+    rpca30_umap1 = median(rpca30_umap1), rpca30_umap2 = median(rpca30_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_rpca30_umap1", y = "sub_rpca30_umap2",
+  data = gg_df, x = "rpca30_umap1", y = "rpca30_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset rpca 30 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters rpca 30 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_rpca30_umap1", y = "sub_rpca30_umap2",
+  data = gg_df, x = "rpca30_umap1", y = "rpca30_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset rpca 30 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution rpca 30 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_rpca30_umap1", y = "sub_rpca30_umap2",
+  data = gg_df, x = "rpca30_umap1", y = "rpca30_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) rpca 30 UMAP")
 ```
@@ -510,9 +510,9 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_svd10_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("svd10_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_svd10_umap1 = add_df$sub_svd10_umap1, sub_svd10_umap2 = add_df$sub_svd10_umap2)
+  colData(sce), svd10_umap1 = add_df$svd10_umap1, svd10_umap2 = add_df$svd10_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -527,18 +527,18 @@ label_df <- data.frame(
   label = levels(gg_df$habib_cluster_name))
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
-  summarize(sub_svd10_umap1 = median(sub_svd10_umap1), sub_svd10_umap2 = median(sub_svd10_umap2)) %>%
+  summarize(svd10_umap1 = median(svd10_umap1), svd10_umap2 = median(svd10_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_svd10_umap1", y = "sub_svd10_umap2",
+  data = gg_df, x = "svd10_umap1", y = "svd10_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset SVD 10 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters SVD 10 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_svd10_umap1", y = "sub_svd10_umap2", col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset SVD 10 UMAP")
+  data = gg_df, x = "svd10_umap1", y = "svd10_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution SVD 10 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_svd10_umap1", y = "sub_svd10_umap2",
+  data = gg_df, x = "svd10_umap1", y = "svd10_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) SVD 10 UMAP")
 ```
@@ -558,9 +558,9 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_svd20_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("svd20_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_svd20_umap1 = add_df$sub_svd20_umap1, sub_svd20_umap2 = add_df$sub_svd20_umap2)
+  colData(sce), svd20_umap1 = add_df$svd20_umap1, svd20_umap2 = add_df$svd20_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -575,18 +575,18 @@ label_df <- data.frame(
   label = levels(gg_df$habib_cluster_name))
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
-  summarize(sub_svd20_umap1 = median(sub_svd20_umap1), sub_svd20_umap2 = median(sub_svd20_umap2)) %>%
+  summarize(svd20_umap1 = median(svd20_umap1), svd20_umap2 = median(svd20_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_svd20_umap1", y = "sub_svd20_umap2",
+  data = gg_df, x = "svd20_umap1", y = "svd20_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset SVD 20 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters SVD 20 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_svd20_umap1", y = "sub_svd20_umap2", col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset SVD 20 UMAP")
+  data = gg_df, x = "svd20_umap1", y = "svd20_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution SVD 20 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_svd20_umap1", y = "sub_svd20_umap2",
+  data = gg_df, x = "svd20_umap1", y = "svd20_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) SVD 20 UMAP")
 ```
@@ -606,9 +606,9 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_svd30_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("svd30_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_svd30_umap1 = add_df$sub_svd30_umap1, sub_svd30_umap2 = add_df$sub_svd30_umap2)
+  colData(sce), svd30_umap1 = add_df$svd30_umap1, svd30_umap2 = add_df$svd30_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -623,18 +623,18 @@ label_df <- data.frame(
   label = levels(gg_df$habib_cluster_name))
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
-  summarize(sub_svd30_umap1 = median(sub_svd30_umap1), sub_svd30_umap2 = median(sub_svd30_umap2)) %>%
+  summarize(svd30_umap1 = median(svd30_umap1), svd30_umap2 = median(svd30_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_svd30_umap1", y = "sub_svd30_umap2",
+  data = gg_df, x = "svd30_umap1", y = "svd30_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset SVD 30 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters SVD 30 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_svd30_umap1", y = "sub_svd30_umap2", col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset SVD 30 UMAP")
+  data = gg_df, x = "svd30_umap1", y = "svd30_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution SVD 30 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_svd30_umap1", y = "sub_svd30_umap2",
+  data = gg_df, x = "svd30_umap1", y = "svd30_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) SVD 30 UMAP")
 ```
@@ -677,9 +677,9 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_ppk10_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("ppk10_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_ppk10_umap1 = add_df$sub_ppk10_umap1, sub_ppk10_umap2 = add_df$sub_ppk10_umap2)
+  colData(sce), ppk10_umap1 = add_df$ppk10_umap1, ppk10_umap2 = add_df$ppk10_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -694,18 +694,18 @@ label_df <- data.frame(
   label = levels(gg_df$habib_cluster_name))
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
-  summarize(sub_ppk10_umap1 = median(sub_ppk10_umap1), sub_ppk10_umap2 = median(sub_ppk10_umap2)) %>%
+  summarize(ppk10_umap1 = median(ppk10_umap1), ppk10_umap2 = median(ppk10_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_ppk10_umap1", y = "sub_ppk10_umap2",
+  data = gg_df, x = "ppk10_umap1", y = "ppk10_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset PPK 10 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters PPK 10 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_ppk10_umap1", y = "sub_ppk10_umap2", col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset PPK 10 UMAP")
+  data = gg_df, x = "ppk10_umap1", y = "ppk10_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution PPK 10 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_ppk10_umap1", y = "sub_ppk10_umap2",
+  data = gg_df, x = "ppk10_umap1", y = "ppk10_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) PPK 10 UMAP")
 ```
@@ -725,9 +725,9 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_ppk20_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("ppk20_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_ppk20_umap1 = add_df$sub_ppk20_umap1, sub_ppk20_umap2 = add_df$sub_ppk20_umap2)
+  colData(sce), ppk20_umap1 = add_df$ppk20_umap1, ppk20_umap2 = add_df$ppk20_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -742,18 +742,18 @@ label_df <- data.frame(
   label = levels(gg_df$habib_cluster_name))
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
-  summarize(sub_ppk20_umap1 = median(sub_ppk20_umap1), sub_ppk20_umap2 = median(sub_ppk20_umap2)) %>%
+  summarize(ppk20_umap1 = median(ppk20_umap1), ppk20_umap2 = median(ppk20_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_ppk20_umap1", y = "sub_ppk20_umap2",
+  data = gg_df, x = "ppk20_umap1", y = "ppk20_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset PPK 20 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters PPK 20 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_ppk20_umap1", y = "sub_ppk20_umap2", col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset PPK 20 UMAP")
+  data = gg_df, x = "ppk20_umap1", y = "ppk20_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution PPK 20 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_ppk20_umap1", y = "sub_ppk20_umap2",
+  data = gg_df, x = "ppk20_umap1", y = "ppk20_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) PPK 20 UMAP")
 ```
@@ -773,9 +773,9 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_ppk30_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("ppk30_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_ppk30_umap1 = add_df$sub_ppk30_umap1, sub_ppk30_umap2 = add_df$sub_ppk30_umap2)
+  colData(sce), ppk30_umap1 = add_df$ppk30_umap1, ppk30_umap2 = add_df$ppk30_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -790,18 +790,18 @@ label_df <- data.frame(
   label = levels(gg_df$habib_cluster_name))
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
-  summarize(sub_ppk30_umap1 = median(sub_ppk30_umap1), sub_ppk30_umap2 = median(sub_ppk30_umap2)) %>%
+  summarize(ppk30_umap1 = median(ppk30_umap1), ppk30_umap2 = median(ppk30_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_ppk30_umap1", y = "sub_ppk30_umap2",
+  data = gg_df, x = "ppk30_umap1", y = "ppk30_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset PPK 30 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters PPK 30 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_ppk30_umap1", y = "sub_ppk30_umap2", col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset PPK 30 UMAP")
+  data = gg_df, x = "ppk30_umap1", y = "ppk30_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution PPK 30 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_ppk30_umap1", y = "sub_ppk30_umap2",
+  data = gg_df, x = "ppk30_umap1", y = "ppk30_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) PPK 30 UMAP")
 ```
@@ -850,10 +850,10 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_denoise_pca10_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("denoise_pca10_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_denoise_pca10_umap1 = add_df$sub_denoise_pca10_umap1,
-  sub_denoise_pca10_umap2 = add_df$sub_denoise_pca10_umap2)
+  colData(sce), denoise_pca10_umap1 = add_df$denoise_pca10_umap1,
+  denoise_pca10_umap2 = add_df$denoise_pca10_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -869,20 +869,20 @@ label_df <- data.frame(
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
   summarize(
-    sub_denoise_pca10_umap1 = median(sub_denoise_pca10_umap1),
-    sub_denoise_pca10_umap2 = median(sub_denoise_pca10_umap2)) %>%
+    denoise_pca10_umap1 = median(denoise_pca10_umap1),
+    denoise_pca10_umap2 = median(denoise_pca10_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_denoise_pca10_umap1", y = "sub_denoise_pca10_umap2",
+  data = gg_df, x = "denoise_pca10_umap1", y = "denoise_pca10_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset denoisePCA 10 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters denoisePCA 10 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_denoise_pca10_umap1", y = "sub_denoise_pca10_umap2",
+  data = gg_df, x = "denoise_pca10_umap1", y = "denoise_pca10_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset denoisePCA 10 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution denoisePCA 10 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_denoise_pca10_umap1", y = "sub_denoise_pca10_umap2",
+  data = gg_df, x = "denoise_pca10_umap1", y = "denoise_pca10_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) denoisePCA 10 UMAP")
 ```
@@ -902,10 +902,10 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_denoise_pca20_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("denoise_pca20_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_denoise_pca20_umap1 = add_df$sub_denoise_pca20_umap1,
-  sub_denoise_pca20_umap2 = add_df$sub_denoise_pca20_umap2)
+  colData(sce), denoise_pca20_umap1 = add_df$denoise_pca20_umap1,
+  denoise_pca20_umap2 = add_df$denoise_pca20_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -921,20 +921,20 @@ label_df <- data.frame(
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
   summarize(
-    sub_denoise_pca20_umap1 = median(sub_denoise_pca20_umap1),
-    sub_denoise_pca20_umap2 = median(sub_denoise_pca20_umap2)) %>%
+    denoise_pca20_umap1 = median(denoise_pca20_umap1),
+    denoise_pca20_umap2 = median(denoise_pca20_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_denoise_pca20_umap1", y = "sub_denoise_pca20_umap2",
+  data = gg_df, x = "denoise_pca20_umap1", y = "denoise_pca20_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset denoisePCA 20 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters denoisePCA 20 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_denoise_pca20_umap1", y = "sub_denoise_pca20_umap2",
+  data = gg_df, x = "denoise_pca20_umap1", y = "denoise_pca20_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset denoisePCA 20 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution denoisePCA 20 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_denoise_pca20_umap1", y = "sub_denoise_pca20_umap2",
+  data = gg_df, x = "denoise_pca20_umap1", y = "denoise_pca20_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) denoisePCA 20 UMAP")
 ```
@@ -954,10 +954,10 @@ if (file.exists(rds)) {
 ```{r}
 reducedDims(sce) <- SimpleList(UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
-names(add_df) <- paste0("sub_denoise_pca30_umap", seq(ncol(add_df)))
+names(add_df) <- paste0("denoise_pca30_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
-  colData(sce), sub_denoise_pca30_umap1 = add_df$sub_denoise_pca30_umap1,
-  sub_denoise_pca30_umap2 = add_df$sub_denoise_pca30_umap2)
+  colData(sce), denoise_pca30_umap1 = add_df$denoise_pca30_umap1,
+  denoise_pca30_umap2 = add_df$denoise_pca30_umap2)
 
 # Set up data frame for ggplot2.
 gg_df <- data.frame(
@@ -973,20 +973,20 @@ label_df <- data.frame(
 label_df2 <- gg_df %>%
   group_by(habib_cluster_name) %>%
   summarize(
-    sub_denoise_pca30_umap1 = median(sub_denoise_pca30_umap1),
-    sub_denoise_pca30_umap2 = median(sub_denoise_pca30_umap2)) %>%
+    denoise_pca30_umap1 = median(denoise_pca30_umap1),
+    denoise_pca30_umap2 = median(denoise_pca30_umap2)) %>%
   left_join(label_df)
 
 dim_red_plot(
-  data = gg_df, x = "sub_denoise_pca30_umap1", y = "sub_denoise_pca30_umap2",
+  data = gg_df, x = "denoise_pca30_umap1", y = "denoise_pca30_umap2",
   col = "habib_cluster_name", type = "cat") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Whole Set Habib Clusters Subset denoisePCA 30 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters denoisePCA 30 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_denoise_pca30_umap1", y = "sub_denoise_pca30_umap2",
+  data = gg_df, x = "denoise_pca30_umap1", y = "denoise_pca30_umap2",
   col = "cell_id_stem", type = "other") +
-  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution Subset denoisePCA 30 UMAP")
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution denoisePCA 30 UMAP")
 dim_red_plot(
-  data = gg_df, x = "sub_denoise_pca30_umap1", y = "sub_denoise_pca30_umap2",
+  data = gg_df, x = "denoise_pca30_umap1", y = "denoise_pca30_umap2",
   col = "log10_total_features_by_counts", type = "cont") +
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) denoisePCA 30 UMAP")
 ```
