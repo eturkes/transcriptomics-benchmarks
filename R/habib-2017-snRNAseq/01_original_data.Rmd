@@ -62,7 +62,7 @@ div.main-container {max-width: none; width: 100%;}
 *This file is a part of the [Transcriptomics Benchmarks Project](https://github.com/eturkes/transcriptomics-benchmarks).*
 
 In this project we apply benchmarks on the cleaned dataset derived from the analysis in [github.com/eturkes/habib-2017-snRNAseq](https://github.com/eturkes/habib-2017-snRNAseq), which uses droplet-based UMI data from @habib_massively_2017.
-In this particular document we simply view the dataset before analysis.
+In this particular document we view the original dataset as well as apply some techniques without prior cleaning/dimensionality reduction.
 We start by setting some global variables and loading in any required packages.
 
 ```{r}
@@ -191,6 +191,51 @@ label_df2 <- gg_df %>%
 dim_red_plot(
   data = gg_df, x = "hvg_tsne1", y = "hvg_tsne2", col = "habib_cluster_name", type = "cat") +
   xlab("tSNE 1") + ylab("tSNE 2") + ggtitle("Habib Clusters HVG tSNE")
+```
+
+# UMAP
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "01", "umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(scale(t(as.matrix(logcounts(sce)))), min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("umap", seq(ncol(add_df)))
+colData(sce) <- cbind(colData(sce), umap1 = add_df$umap1, umap2 = add_df$umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(umap1 = median(umap1), umap2 = median(umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "umap1", y = "umap2", col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters All Dimensions UMAP")
+dim_red_plot(
+  data = gg_df, x = "umap1", y = "umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution All Dimensions UMAP")
+dim_red_plot(
+  data = gg_df, x = "umap1", y = "umap2", col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) All Dimensions UMAP")
 ```
 
 # References
