@@ -141,7 +141,7 @@ plot(
   log10(attr(reducedDim(pca, "PCA"), "percentVar")), xlab = "PC",
   ylab = "log10(Proportion of Variance Explained)", pch = 20,
   cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
-abline(v = c(10, 20, 30), lty = 2, col = "red")
+abline(v = c(10, 20, 30, 40, 50), lty = 2, col = "red")
 ```
 
 ## 10 PCs
@@ -423,7 +423,7 @@ par(mfrow = c(1, 1))
 plot(
   log10(pca$sdev), xlab = "PC", ylab = "log10(Proportion of Variance Explained)",
   pch = 20, cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
-abline(v = c(10, 20, 30), lty = 2, col = "red")
+abline(v = c(10, 20, 30, 40, 50), lty = 2, col = "red")
 ```
 
 ## 10 PCs
@@ -701,7 +701,7 @@ par(mfrow = c(1, 1))
 plot(
   log10(svd$d), xlab = "PC", ylab = "log10(Proportion of Variance Explained)",
   pch = 20, cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
-abline(v = c(10, 20, 30), lty = 2, col = "red")
+abline(v = c(10, 20, 30, 40, 50), lty = 2, col = "red")
 ```
 
 ## 10 PCs
@@ -972,7 +972,7 @@ par(mfrow = c(1, 1))
 plot(
   log10(ppk$d), xlab = "PC", ylab = "log10(Proportion of Variance Explained)",
   pch = 20, cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
-abline(v = c(10, 20, 30), lty = 2, col = "red")
+abline(v = c(10, 20, 30, 40, 50), lty = 2, col = "red")
 ```
 
 ## 10 PCs
@@ -1249,7 +1249,7 @@ plot(
   log10(attr(reducedDim(sce), "percentVar")), xlab = "PC",
   ylab = "log10(Proportion of Variance Explained)", pch = 20,
   cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
-abline(v = c(10, 20, 30), lty = 2, col = "red")
+abline(v = c(10, 20, 30, 40, 50), lty = 2, col = "red")
 ```
 
 ## 10 PCs
