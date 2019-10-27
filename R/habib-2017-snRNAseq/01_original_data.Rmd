@@ -238,6 +238,108 @@ dim_red_plot(
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) All Dimensions UMAP")
 ```
 
+# Seurat Clustering with PCA
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "01", "pca.rds")
+if (file.exists(rds)) {
+  ppk <- readRDS(rds)
+} else {
+  set.seed(1)
+  ppk <- propack.svd(scale(t(as.matrix(logcounts(sce)))), neig = 50)
+  saveRDS(ppk, rds)}
+```
+
+```{r}
+pca <- t(ppk$d * t(ppk$u))
+par(mfrow = c(1, 1))
+plot(
+  log10(ppk$d), xlab = "PC", ylab = "log10(Proportion of Variance Explained)",
+  pch = 20, cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
+abline(v = 20, lty = 2, col = "red")
+```
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "01", "pca_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(pca[ , 1:20], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
+add_df <- data.frame(reducedDim(sce, "UMAP"))
+names(add_df) <- paste0("pca_umap", seq(ncol(add_df)))
+colData(sce) <- cbind(
+  colData(sce), pca_umap1 = add_df$pca_umap1, pca_umap2 = add_df$pca_umap2)
+gg_df <- data.frame(gg_df, add_df)
+rm(pca, umap, add_df)
+
+# Setup for automatic placement of cluster labels.
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(pca_umap1 = median(pca_umap1), pca_umap2 = median(pca_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "pca_umap1", y = "pca_umap2", col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters PCA UMAP")
+dim_red_plot(
+  data = gg_df, x = "pca_umap1", y = "pca_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution PCA UMAP")
+dim_red_plot(
+  data = gg_df, x = "pca_umap1", y = "pca_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) PCA UMAP")
+```
+
+Seurat is a nearest neighbor graph clustering method with a `resolution` parameter that indirectly influences the number of clusters generated.
+Concerning `resolution`, the authors write:
+
+> setting this parameter between 0.4-1.2 typically returns good results for single-cell datasets of around 3K cells.
+Optimal resolution often increases for larger datasets.
+
+As a compromise, we try simply scaling the median of these recommended settings (0.8, which is also the default) to the size of our dataset.
+
+```{r}
+resolution <- (dim(sce)[2] / 3000) * 0.8
+resolution
+```
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "01", "seurat.rds")
+if (file.exists(rds)) {
+  seurat <- readRDS(rds)
+} else {
+  seurat <- as.Seurat(sce)
+  seurat <- NormalizeData(seurat)
+  seurat <- FindVariableFeatures(seurat, nfeatures = dim(sce)[1])
+  seurat <- ScaleData(seurat)
+  seurat <- FindNeighbors(seurat, reduction = "PCA", dims = 1:20)
+  seurat <- FindClusters(seurat, resolution = resolution)
+  saveRDS(seurat, rds)}
+```
+
+```{r}
+gg_df$seurat_clusters <- seurat$seurat_clusters
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  seurat_clusters = levels(gg_df$seurat_clusters),
+  label = levels(gg_df$seurat_clusters))
+label_df2 <- gg_df %>%
+  group_by(seurat_clusters) %>%
+  summarize(pca_umap1 = median(pca_umap1), pca_umap2 = median(pca_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "pca_umap1", y = "pca_umap2", col = "seurat_clusters", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Seurat Clusters PCA UMAP")
+```
+
 # References
 
 This is the concluding section of the document. Here we write relevant results to disk, output the sessionInfo, and create a bibliography for works cited.
