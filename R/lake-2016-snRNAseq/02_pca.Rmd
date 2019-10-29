@@ -20,7 +20,8 @@ output:
 knit:
   (function(inputFile, encoding) {
     rmarkdown::render(
-      inputFile, encoding = encoding, output_file = "../../results/lake-2016-snRNAseq/02-pca.html")})
+      inputFile, encoding = encoding,
+      output_file = "../../results/lake-2016-snRNAseq/02-pca.html")})
 ---
 
 ```{r, include = FALSE}
