@@ -1028,6 +1028,26 @@ dim_red_plot(
   xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Lake Clusters PPK 50 UMAP")
 ```
 
+# Seurat
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "02", "seurat.rds")
+if (file.exists(rds)) {
+  seurat <- readRDS(rds)
+} else {
+  seurat <- as.Seurat(sce, counts = "logcounts", data = NULL)
+  seurat <- FindVariableFeatures(seurat, nfeatures = dim(sce)[1])
+  seurat <- ScaleData(seurat)
+  seurat <- RunPCA(seurat)
+  seurat <- JackStraw(seurat, dims = 50)
+  seurat <- ScoreJackStraw(seurat, dims = 1:50)
+  saveRDS(seurat, rds)}
+```
+
+```{r}
+JackStrawPlot(seurat, dims = 1:50)
+```
+
 # References
 
 This is the concluding section of the document. Here we write relevant results to disk, output the sessionInfo, and create a bibliography for works cited.
