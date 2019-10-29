@@ -30,3 +30,8 @@ rmarkdown::render(
   "lake-2016-snRNAseq/02_pca.Rmd",
   output_file = "../../results/lake-2016-snRNAseq/02-pca.html"
 )
+
+rmarkdown::render(
+  "habib-2017-snRNAseq/03_hvg.Rmd",
+  output_file = "../../results/habib-2017-snRNAseq/03-hvg.html"
+)

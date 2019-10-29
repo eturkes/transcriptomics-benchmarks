@@ -1,0 +1,380 @@
+---
+title: "03 HVG"
+author:
+  - name: "Emir Turkes [emir.turkes@eturkes.com]"
+  - name: "UK Dementia Research Institute at UCL"
+date: '`r strftime(Sys.time(), format = "%B %d, %Y")`'
+bibliography: "../../transcriptomics-benchmarks.bib"
+biblio-style: apalike
+link-citations: true
+output:
+  html_document:
+    code_folding: show
+    number_sections: true
+    theme: lumen
+    highlight: haddock
+    toc: true
+    toc_depth: 2
+    toc_float:
+      smooth_scroll: false
+knit:
+  (function(inputFile, encoding) {
+    rmarkdown::render(
+      inputFile, encoding = encoding,
+      output_file = "../../results/habib-2017-snRNAseq/03-hvg.html")})
+---
+
+```{r, include = FALSE}
+#    This file is part of transcriptomics-benchmarks.
+#    Copyright (C) 2019  Emir Turkes
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#    Emir Turkes can be contacted at emir.turkes@eturkes.com
+
+knitr::opts_chunk$set(fig.width = 8.5, fig.height = 7)
+```
+
+<style type="text/css">
+body {font-size: 16px;}
+h1.title {font-size: 35px;}
+h1 {font-size: 24px;}
+h2 {font-size: 22px;}
+h3 {font-size: 20px;}
+.toc-content {padding-left: 0px; padding-right: 0px;}
+div.tocify {width: 100%;}
+.tocify-subheader .tocify-item {font-size: 0.95em; padding-left: 25px; text-indent: 0;}
+.tocify-subheader .tocify-subheader .tocify-item {
+  font-size: 0.90em; padding-left: 35px; text-indent: 0;}
+div.main-container {max-width: none; width: 100%;}
+</style>
+
+*This file is a part of the [Transcriptomics Benchmarks Project](https://github.com/eturkes/transcriptomics-benchmarks).*
+
+This report assesses the effect of extracting highly variable genes (HVGs) on downstream analysis.
+
+```{r}
+assets_dir <- file.path(getwd(), "..", "..", "assets/habib-2017-snRNAseq")
+results_dir <- file.path(getwd(), "..", "..", "results/habib-2017-snRNAseq")
+
+packages <- c(
+  "conflicted", "SingleCellExperiment", "magrittr", "dplyr", "ggplot2", "ggrepel", "S4Vectors",
+  "SummarizedExperiment", "DropletUtils", "scran", "BiocSingular", "scater", "Rtsne", "svd",
+  "SC3", "DT", "data.table", "Seurat", "uwot", "viridis", "rsvd")
+invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
+
+conflict_prefer("which", "BiocGenerics")
+options(stringsAsFactors = FALSE)
+
+# Create a unique cache and results data directory for each iterated section.
+if (!dir.exists(file.path(assets_dir, "cache", "03"))) {
+  dir.create(file.path(assets_dir, "cache", "03"), recursive = TRUE)}
+if (!dir.exists(file.path(results_dir, "data", "03"))) {
+  dir.create(file.path(results_dir, "data", "03"), recursive = TRUE)}
+
+# ggplot2 function providing custom aesthetics and automatic placement of categorical labels.
+# For continuous data, a colorbar is implemented.
+dim_red_plot <- function(data, x, y, col, type) {
+  gg <- ggplot(data, aes_string(x = x, y = y, color = col)) +
+    geom_point(alpha = 0.35, stroke = 0.05, shape = 21, aes_string(fill = col)) +
+    theme_classic() +
+    theme(
+      legend.position = "right", plot.title = element_text(hjust = 0.5),
+      legend.title = element_blank()) +
+    guides(color = guide_legend(override.aes = list(alpha = 1)))
+    if (type == "cat") {
+      gg <- gg + geom_label_repel(data = label_df2, aes(label = label), show.legend = FALSE)
+    } else if (type == "cont") {
+      gg <- ggplot(data, aes_string(x = x, y = y)) +
+        geom_point(alpha = 0.35, stroke = 0.05, aes_string(color = col)) +
+        theme_classic() +
+        theme(
+          legend.position = "right", plot.title = element_text(hjust = 0.5),
+          legend.title = element_blank()) +
+        scale_colour_viridis()}
+  gg}
+
+# Adds download buttons.
+datatable_custom <- function(dt) {
+  datatable(
+    dt,
+    extensions = "Buttons", options = list(dom = "Blfrtip", buttons = list(
+      "copy", "print",
+      list(extend = "collection", buttons = c("csv", "excel", "pdf"), text = "Download"))))}
+```
+
+We use the SCE object from the analysis in [github.com/eturkes/habib-2017-snRNAseq](https://github.com/eturkes/habib-2017-snRNAseq).
+
+```{r}
+sce <- readRDS(file.path(assets_dir, "sce.rds"))
+sce
+```
+
+We subset to the most highly variable genes (HVGs) to reduce noise in our dataset.
+As we do not have spike-in transcripts, we start by modeling the technical noise as Poisson and creating a fitted trend on that basis.
+
+```{r}
+new_trend <- makeTechTrend(x = sce)
+fit <- trendVar(sce, use.spikes = FALSE, loess.args = list(span = 0.05))
+par(mfrow = c(1, 1), mar = c(5, 4, 2, 1), bty = "n")
+plot(
+  fit$mean, fit$var, pch = 20,
+  col = rgb(0.1, 0.2, 0.7, 0.6), xlab = "Mean Log-expression", ylab = "Variance")
+curve(fit$trend(x), col = "orange", lwd = 2, add = TRUE)
+curve(new_trend(x), col = "red", lwd = 2, add = TRUE)
+legend(
+  "top", legend = c("Poisson Noise", "Observed Trend"), lty = 1,
+  lwd = 2, col = c("red", "orange"), bty = "n")
+```
+
+The plot shows a large discrepancy between the two trends, which we assume is contributed by each gene's biological component.
+We extract the genes with the largest biological components and plot them here.
+
+```{r}
+fit$trend <- new_trend
+dec <- decomposeVar(fit = fit)
+top_dec <- rownames(dec[order(dec$bio, decreasing = TRUE), ])[1:10]
+rm(fit)
+plotExpression(sce, features = top_dec) +
+  stat_summary(
+    fun.y = median, fun.ymin = median, fun.ymax = median,
+    geom = "crossbar", width = 0.3, alpha = 0.8)
+```
+
+We inspect the distribution of our FDR and biological component values to see how see should proceed.
+
+```{r, fig.height = 6}
+fdr_median <- median(dec$FDR, na.rm = TRUE)
+fdr_median
+bio_median <- median(dec$bio, na.rm = TRUE)
+bio_median
+
+par(mfrow = c(1, 2))
+hist(log10(dec$FDR), breaks = 100, main = "")
+abline(v = c(log10(fdr_median), log10(min(dec$FDR[dec$FDR > 0]))), lty = 2, col = "red")
+hist(log10(dec$bio), breaks = 100, main = "")
+abline(v = c(log10(bio_median), log10(max(dec$bio))), lty = 2, col = "red")
+```
+
+We see that thresholding at the median is able to capture most of the desired distribution of both values.
+Let's see what number of genes we would subset to with these thresholds.
+
+```{r}
+keep <- which(dec$FDR < fdr_median & dec$bio >= bio_median)
+sce_hvg <- sce[keep, ]
+rm(dec)
+dim(sce_hvg)[1]
+```
+
+This approach captures identifies about 5,000 HVGs, a suitable number for downstream analysis.
+Due to the change in dimensions, we renormalize and calculate new QC metrics.
+
+```{r}
+sce_hvg <- calculateQCMetrics(sce_hvg)
+```
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "03", "hvg_quickCluster.rds")
+if (file.exists(rds)) {
+  quickCluster <- readRDS(rds)
+} else {
+  set.seed(1)
+  quickCluster <- quickCluster(sce_hvg, use.ranks = FALSE, BSPARAM = IrlbaParam())
+  saveRDS(quickCluster, rds)}
+```
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "03", "hvg_size_factors.rds")
+if (file.exists(rds)) {
+  size_factors <- readRDS(rds)
+} else {
+  size_factors <- computeSumFactors(sce_hvg, cluster = quickCluster, min.mean = 0.1)
+  saveRDS(size_factors, rds)}
+```
+
+```{r}
+sce_hvg <- size_factors
+sce_hvg <- normalize(sce_hvg)
+rm(size_factors)
+sce_hvg
+```
+
+# All Dimensions
+
+We test the method by computing UMAP as well as Seurat clustering using the entire dataset.
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "03", "umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(scale(t(as.matrix(logcounts(sce_hvg)))), min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce_hvg) <- SimpleList(UMAP = umap)
+add_df <- data.frame(reducedDim(sce_hvg, "UMAP"))
+names(add_df) <- paste0("umap", seq(ncol(add_df)))
+colData(sce_hvg) <- cbind(colData(sce_hvg), umap1 = add_df$umap1, umap2 = add_df$umap2)
+colData(sce) <- cbind(colData(sce), umap1 = add_df$umap1, umap2 = add_df$umap2)
+
+# Set up data frame for ggplot2.
+gg_df <- data.frame(
+  colData(sce_hvg)[ , c(
+    "cell_id_stem", "log10_total_features_by_counts", "habib_cluster_name")], add_df)
+rownames(gg_df) <- NULL
+gg_df$habib_cluster_name <- factor(gg_df$habib_cluster_name)
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  habib_cluster_name = levels(gg_df$habib_cluster_name),
+  label = levels(gg_df$habib_cluster_name))
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(umap1 = median(umap1), umap2 = median(umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "umap1", y = "umap2", col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters HVG All Dimensions UMAP")
+dim_red_plot(
+  data = gg_df, x = "umap1", y = "umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution HVG All Dimensions UMAP")
+dim_red_plot(
+  data = gg_df, x = "umap1", y = "umap2", col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) HVG All Dimensions UMAP")
+
+resolution <- (dim(sce)[2] / 3000) * 0.8
+resolution
+```
+
+```{r, cache = TRUE}
+# Takes forever, so commented out for now.
+# rds <- file.path(assets_dir, "cache", "03", "seurat_alldims.rds")
+# if (file.exists(rds)) {
+#   seurat <- readRDS(rds)
+# } else {
+#   seurat <- as.Seurat(sce)
+#   seurat <- NormalizeData(seurat)
+#   seurat <- FindVariableFeatures(seurat, nfeatures = dim(sce)[1])
+#   seurat <- ScaleData(seurat)
+#   seurat <- FindNeighbors(seurat, dims = NULL)
+#   seurat <- FindClusters(seurat, resolution = resolution)
+#   saveRDS(seurat, rds)}
+```
+
+# With PCA
+
+We also test a combination of extraction of HVGs with PCA on UMAP.
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "03", "hvg_pca.rds")
+if (file.exists(rds)) {
+  ppk <- readRDS(rds)
+} else {
+  set.seed(1)
+  ppk <- propack.svd(scale(t(as.matrix(logcounts(sce_hvg)))), neig = 50)
+  saveRDS(ppk, rds)}
+```
+
+```{r}
+pca <- t(ppk$d * t(ppk$u))
+par(mfrow = c(1, 1))
+plot(
+  log10(ppk$d), xlab = "PC", ylab = "log10(Proportion of Variance Explained)",
+  pch = 20, cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
+abline(v = 20, lty = 2, col = "red")
+```
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "03", "hvg_pca_umap.rds")
+if (file.exists(rds)) {
+  umap <- readRDS(rds)
+} else {
+  set.seed(1)
+  umap <- umap(pca[ , 1:20], min_dist = 0.5)
+  saveRDS(umap, rds)}
+```
+
+```{r}
+reducedDims(sce_hvg) <- SimpleList(PCA = pca, UMAP = umap)
+add_df <- data.frame(reducedDim(sce_hvg, "UMAP"))
+names(add_df) <- paste0("hvg_pca_umap", seq(ncol(add_df)))
+colData(sce_hvg) <- cbind(
+  colData(sce_hvg), hvg_pca_umap1 = add_df$hvg_pca_umap1, hvg_pca_umap2 = add_df$hvg_pca_umap2)
+colData(sce) <- cbind(
+  colData(sce), hvg_pca_umap1 = add_df$hvg_pca_umap1, hvg_pca_umap2 = add_df$hvg_pca_umap2)
+gg_df <- data.frame(gg_df, add_df)
+rm(pca, umap, add_df)
+
+# Setup for automatic placement of cluster labels.
+label_df2 <- gg_df %>%
+  group_by(habib_cluster_name) %>%
+  summarize(hvg_pca_umap1 = median(hvg_pca_umap1), hvg_pca_umap2 = median(hvg_pca_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "hvg_pca_umap1", y = "hvg_pca_umap2",
+  col = "habib_cluster_name", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Habib Clusters HVG PCA UMAP")
+dim_red_plot(
+  data = gg_df, x = "hvg_pca_umap1", y = "hvg_pca_umap2", col = "cell_id_stem", type = "other") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("Sample Distribution HVG PCA UMAP")
+dim_red_plot(
+  data = gg_df, x = "hvg_pca_umap1", y = "hvg_pca_umap2",
+  col = "log10_total_features_by_counts", type = "cont") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("log10(Total Features) HVG PCA UMAP")
+```
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "03", "seurat_hvg.rds")
+if (file.exists(rds)) {
+  seurat_hvg <- readRDS(rds)
+} else {
+  seurat_hvg <- as.Seurat(sce_hvg)
+  seurat_hvg <- NormalizeData(seurat_hvg)
+  seurat_hvg <- FindVariableFeatures(seurat_hvg, nfeatures = dim(sce)[1])
+  seurat_hvg <- ScaleData(seurat_hvg)
+  seurat_hvg <- FindNeighbors(seurat_hvg, reduction = "PCA", dims = 1:20)
+  seurat_hvg <- FindClusters(seurat_hvg, resolution = resolution)
+  saveRDS(seurat_hvg, rds)}
+```
+
+```{r}
+gg_df$hvg_seurat_clusters <- seurat_hvg$seurat_clusters
+
+# Setup for automatic placement of cluster labels.
+label_df <- data.frame(
+  hvg_seurat_clusters = levels(gg_df$hvg_seurat_clusters),
+  label = levels(gg_df$hvg_seurat_clusters))
+label_df2 <- gg_df %>%
+  group_by(hvg_seurat_clusters) %>%
+  summarize(hvg_pca_umap1 = median(hvg_pca_umap1), hvg_pca_umap2 = median(hvg_pca_umap2)) %>%
+  left_join(label_df)
+
+dim_red_plot(
+  data = gg_df, x = "hvg_pca_umap1", y = "hvg_pca_umap2",
+  col = "hvg_seurat_clusters", type = "cat") +
+  xlab("UMAP 1") + ylab("UMAP 2") + ggtitle("HVG Seurat Clusters HVG PCA UMAP")
+```
+
+# References
+
+This is the concluding section of the document. Here we write relevant results to disk, output the sessionInfo, and create a bibliography for works cited.
+
+```{r}
+sessionInfo()
+```
