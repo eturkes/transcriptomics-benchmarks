@@ -157,7 +157,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = reducedDim(pca, "PCA"), UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("prcomp10_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -209,7 +209,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = reducedDim(pca, "PCA"), UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("prcomp20_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -261,7 +261,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = reducedDim(pca, "PCA"), UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("prcomp30_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -313,7 +313,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = reducedDim(pca, "PCA"), UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("prcomp40_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -365,7 +365,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = reducedDim(pca, "PCA"), UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("prcomp50_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -439,7 +439,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = pca$x, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("rpca10_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -490,7 +490,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = pca$x, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("rpca20_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -541,7 +541,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = pca$x, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("rpca30_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -592,7 +592,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = pca$x, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("rpca40_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -644,7 +644,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = pca$x, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("rpca50_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -861,7 +861,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("svd40_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -913,7 +913,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("svd50_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -1132,7 +1132,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("ppk40_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -1184,7 +1184,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = pca, UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("ppk50_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -1249,7 +1249,7 @@ plot(
   log10(attr(reducedDim(sce), "percentVar")), xlab = "PC",
   ylab = "log10(Proportion of Variance Explained)", pch = 20,
   cex = 0.6, col = rgb(0.8, 0.2, 0.2, 0.5))
-abline(v = c(10, 20, 30, 40, 50), lty = 2, col = "red")
+abline(v = c(10, 20, 30, 40, 50, ncol(reducedDim(sce, "PCA"))), lty = 2, col = "red")
 ```
 
 ## 10 PCs
@@ -1265,7 +1265,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = reducedDim(pca, "PCA"), UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("denoise_pca10_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -1317,7 +1317,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = reducedDim(pca, "PCA"), UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("denoise_pca20_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -1369,7 +1369,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = reducedDim(pca, "PCA"), UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("denoise_pca30_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -1421,7 +1421,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = reducedDim(pca, "PCA"), UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("denoise_pca40_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
@@ -1473,7 +1473,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-reducedDims(sce) <- SimpleList(UMAP = umap)
+reducedDims(sce) <- SimpleList(PCA = reducedDim(pca, "PCA"), UMAP = umap)
 add_df <- data.frame(reducedDim(sce, "UMAP"))
 names(add_df) <- paste0("denoise_pca50_umap", seq(ncol(add_df)))
 colData(sce) <- cbind(
