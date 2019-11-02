@@ -47,6 +47,7 @@ RUN apt-get update \
         -e "BiocManager::install('BiocSingular')" \
         -e "BiocManager::install('scater')" \
         -e "BiocManager::install('SC3')" \
+        -e "BiocManager::install('splatter')" \
     && apt-get clean \
     && rm -Rf /var/lib/apt/lists/ \
         /tmp/downloaded_packages/ \
