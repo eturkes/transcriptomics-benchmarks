@@ -1,0 +1,219 @@
+---
+title: "06 Non-linear Reduction"
+author:
+  - name: "Emir Turkes [emir.turkes@eturkes.com]"
+  - name: "UK Dementia Research Institute at UCL"
+date: '`r strftime(Sys.time(), format = "%B %d, %Y")`'
+bibliography: "../../transcriptomics-benchmarks.bib"
+biblio-style: apalike
+link-citations: true
+output:
+  html_document:
+    number_sections: true
+    theme: lumen
+    highlight: haddock
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+knit:
+  (function(inputFile, encoding) {
+    rmarkdown::render(
+      inputFile, encoding = encoding,
+      output_file = "../../results/habib-2017-snRNAseq/06-nonlinear.html")})
+---
+
+```{r, include = FALSE}
+#    This file is part of transcriptomics-benchmarks.
+#    Copyright (C) 2019  Emir Turkes
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#    Emir Turkes can be contacted at emir.turkes@eturkes.com
+
+knitr::opts_chunk$set(fig.width = 8.5, fig.height = 7)
+```
+
+<style type="text/css">
+body {font-size: 16px;}
+h1.title {font-size: 35px;}
+h1 {font-size: 24px;}
+h2 {font-size: 22px;}
+h3 {font-size: 20px;}
+.toc-content {padding-left: 0px; padding-right: 0px;}
+div.tocify {width: 100%;}
+.tocify-subheader .tocify-item {font-size: 0.95em; padding-left: 25px; text-indent: 0;}
+.tocify-subheader .tocify-subheader .tocify-item {
+  font-size: 0.90em; padding-left: 35px; text-indent: 0;}
+div.main-container {max-width: none; width: 100%;}
+</style>
+
+*This file is a part of the [Transcriptomics Benchmarks Project](https://github.com/eturkes/transcriptomics-benchmarks).*
+
+This report assesses the effect of extracting highly variable genes (HVGs) on downstream analysis.
+
+```{r}
+data_str <- "habib-2017-snRNAseq"
+data_str_sub <- unlist(strsplit(data_str, "-"))[1]
+assets_dir <- file.path(getwd(), "..", "..", "assets/habib-2017-snRNAseq")
+results_dir <- file.path(getwd(), "..", "..", "results/habib-2017-snRNAseq")
+
+packages <- c(
+  "conflicted", "SingleCellExperiment", "magrittr", "dplyr", "ggplot2", "ggrepel", "S4Vectors",
+  "SummarizedExperiment", "DropletUtils", "scran", "BiocSingular", "scater", "Rtsne", "svd",
+  "SC3", "DT", "data.table", "Seurat", "uwot", "viridis", "rsvd")
+invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
+
+conflict_prefer("which", "BiocGenerics")
+options(stringsAsFactors = FALSE)
+
+# Create a unique cache and results data directory for each iterated section.
+if (!dir.exists(file.path(assets_dir, "cache", "06"))) {
+  dir.create(file.path(assets_dir, "cache", "06"), recursive = TRUE)}
+if (!dir.exists(file.path(results_dir, "data", "06"))) {
+  dir.create(file.path(results_dir, "data", "06"), recursive = TRUE)}
+
+# ggplot2 function providing custom aesthetics and automatic placement of categorical labels.
+# For continuous data, a colorbar is implemented.
+dim_red_plot <- function(data, x, y, col, type) {
+  gg <- ggplot(data, aes_string(x = x, y = y, color = col)) +
+    geom_point(alpha = 0.35, stroke = 0.05, shape = 21, aes_string(fill = col)) +
+    theme_classic() +
+    theme(
+      legend.position = "right", plot.title = element_text(hjust = 0.5),
+      legend.title = element_blank()) +
+    guides(color = guide_legend(override.aes = list(alpha = 1)))
+    if (type == "cat") {
+      gg <- gg + geom_label_repel(data = label_df2, aes(label = label), show.legend = FALSE)
+    } else if (type == "cont") {
+      gg <- ggplot(data, aes_string(x = x, y = y)) +
+        geom_point(alpha = 0.35, stroke = 0.05, aes_string(color = col)) +
+        theme_classic() +
+        theme(
+          legend.position = "right", plot.title = element_text(hjust = 0.5),
+          legend.title = element_blank()) +
+        scale_colour_viridis()}
+  gg}
+
+# Adds download buttons.
+datatable_custom <- function(dt) {
+  datatable(
+    dt,
+    extensions = "Buttons", options = list(dom = "Blfrtip", buttons = list(
+      "copy", "print",
+      list(extend = "collection", buttons = c("csv", "excel", "pdf"), text = "Download"))))}
+```
+
+We use the HVG SCE object from the previous analysis, `05_pca.Rmd`.
+
+```{r}
+sce <- readRDS(file.path(results_dir, "data", "05", "sce.rds"))
+```
+
+# tSNE
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "06", "tsne.rds")
+if (file.exists(rds)) {
+  sce <- readRDS(rds)
+} else {
+  set.seed(1)
+  sce <- runTSNE(sce, dimred = "PCA", perplexity = 5, BPPARAM = MulticoreParam())
+  reducedDim(sce, "TSNE_5") <- reducedDim(sce, "TSNE")
+  set.seed(1)
+  sce <- runTSNE(sce, dimred = "PCA", perplexity = 20, BPPARAM = MulticoreParam())
+  reducedDim(sce, "UMAP_0.5") <- reducedDim(sce, "TSNE")
+  set.seed(1)
+  sce <- runTSNE(sce, dimred = "PCA", perplexity = 80, BPPARAM = MulticoreParam())
+  reducedDim(sce, "TSNE_80") <- reducedDim(sce, "TSNE")
+  saveRDS(sce, rds)}
+```
+
+## Perplexity = 5
+
+```{r}
+plotReducedDim(sce, dimred = "TSNE_5", colour_by = paste0(data_str_sub, "_cluster_name"))
+plotReducedDim(sce, dimred = "TSNE_5", colour_by = "cell_id_stem")
+plotReducedDim(sce, dimred = "TSNE_5", colour_by = "detected")
+```
+
+## Perplexity = 20
+
+```{r}
+plotReducedDim(sce, dimred = "TSNE_20", colour_by = paste0(data_str_sub, "_cluster_name"))
+plotReducedDim(sce, dimred = "TSNE_20", colour_by = "cell_id_stem")
+plotReducedDim(sce, dimred = "TSNE_20", colour_by = "detected")
+```
+
+## Perplexity = 80
+
+```{r}
+plotReducedDim(sce, dimred = "TSNE_80", colour_by = paste0(data_str_sub, "_cluster_name"))
+plotReducedDim(sce, dimred = "TSNE_80", colour_by = "cell_id_stem")
+plotReducedDim(sce, dimred = "TSNE_80", colour_by = "detected")
+```
+
+# UMAP
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "06", "umap.rds")
+if (file.exists(rds)) {
+  sce <- readRDS(rds)
+} else {
+  set.seed(1)
+  sce <- runUMAP(sce, dimred = "PCA", min_dist = 0.75, BPPARAM = MulticoreParam())
+  reducedDim(sce, "UMAP_0.75") <- reducedDim(sce, "UMAP")
+  set.seed(1)
+  sce <- runUMAP(sce, dimred = "PCA", min_dist = 0.5, BPPARAM = MulticoreParam())
+  reducedDim(sce, "UMAP_0.5") <- reducedDim(sce, "UMAP")
+  set.seed(1)
+  sce <- runUMAP(sce, dimred = "PCA", min_dist = 0.25, BPPARAM = MulticoreParam())
+  reducedDim(sce, "UMAP_0.25") <- reducedDim(sce, "UMAP")
+  saveRDS(sce, rds)}
+```
+
+## Min. Dist. = 0.75
+
+```{r}
+plotReducedDim(sce, dimred = "UMAP_0.75", colour_by = paste0(data_str_sub, "_cluster_name"))
+plotReducedDim(sce, dimred = "UMAP_0.75", colour_by = "cell_id_stem")
+plotReducedDim(sce, dimred = "UMAP_0.75", colour_by = "detected")
+```
+
+## Min. Dist. = 0.5
+
+```{r}
+plotReducedDim(sce, dimred = "UMAP_0.5", colour_by = paste0(data_str_sub, "_cluster_name"))
+plotReducedDim(sce, dimred = "UMAP_0.5", colour_by = "cell_id_stem")
+plotReducedDim(sce, dimred = "UMAP_0.5", colour_by = "detected")
+```
+
+## Min. Dist. = 0.25
+
+```{r}
+plotReducedDim(sce, dimred = "UMAP_0.25", colour_by = paste0(data_str_sub, "_cluster_name"))
+plotReducedDim(sce, dimred = "UMAP_0.25", colour_by = "cell_id_stem")
+plotReducedDim(sce, dimred = "UMAP_0.25", colour_by = "detected")
+```
+
+# References
+
+This is the concluding section of the document. Here we write relevant results to disk, output the sessionInfo, and create a bibliography for works cited.
+
+```{r}
+saveRDS(sce, file.path(results_dir, "data", "06", "sce.rds"))
+
+sessionInfo()
+```
