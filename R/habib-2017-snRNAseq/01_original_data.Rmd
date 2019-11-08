@@ -123,13 +123,13 @@ sce
 reducedDims(sce) <- SimpleList(
   PCA = reducedDim(sce, "PCA"),
   TSNE = data.frame(colData(sce)[ , paste0(data_str_sub, "_tsne", 1:2)]))
-plotReducedDim(sce, dimred = "TSNE", colour_by = paste0(data_str_sub, "_cluster_name"))
+plotTSNE(sce, colour_by = paste0(data_str_sub, "_cluster_name"))
 ```
 
 # HVG Seurat Clusters Habib tSNE
 
 ```{r}
-plotReducedDim(sce, dimred = "TSNE", colour_by = "seurat_hvg_clusters_name")
+plotTSNE(sce, colour_by = "seurat_hvg_clusters_name")
 ```
 
 # HVG Seurat Clusters HVG tSNE
@@ -137,13 +137,13 @@ plotReducedDim(sce, dimred = "TSNE", colour_by = "seurat_hvg_clusters_name")
 ```{r}
 reducedDims(sce) <- SimpleList(
   PCA = reducedDim(sce, "PCA"), TSNE = data.frame(colData(sce)[ , paste0("hvg_tsne", 1:2)]))
-plotReducedDim(sce, dimred = "TSNE", colour_by = paste0(data_str_sub, "_cluster_name"))
+plotTSNE(sce, colour_by = paste0(data_str_sub, "_cluster_name"))
 ```
 
 # Habib Clusters HVG tSNE
 
 ```{r}
-plotReducedDim(sce, dimred = "TSNE", colour_by = "seurat_hvg_clusters_name")
+plotTSNE(sce, colour_by = "seurat_hvg_clusters_name")
 ```
 
 # References

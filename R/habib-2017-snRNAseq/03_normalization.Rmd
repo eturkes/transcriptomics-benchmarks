@@ -148,7 +148,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-plotPCA(sce, colour_by = I(librarySizeFactors(sce)))
+plotPCA(sce, colour_by = "cell_id_stem")
 ```
 
 # Seurat
@@ -172,7 +172,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-DimPlot(seurat, reduction = "pca")
+PCAPlot(seurat, group.by = "cell_id_stem")
 ```
 
 # sctransform
@@ -193,7 +193,7 @@ if (file.exists(rds)) {
 ```
 
 ```{r}
-DimPlot(seurat, reduction = "pca")
+PCAPlot(seurat, group.by = "cell_id_stem")
 ```
 
 # References
