@@ -30,3 +30,8 @@ rmarkdown::render(
   "habib-2017-snRNAseq/03_normalization.Rmd",
   output_file = "../../results/habib-2017-snRNAseq/03-normalization.html"
 )
+
+rmarkdown::render(
+  "habib-2017-snRNAseq/04_hvg.Rmd",
+  output_file = "../../results/habib-2017-snRNAseq/04-hvg.html"
+)
