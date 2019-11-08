@@ -9,13 +9,13 @@ biblio-style: apalike
 link-citations: true
 output:
   html_document:
-    code_folding: show
     number_sections: true
     theme: lumen
     highlight: haddock
     toc: true
     toc_depth: 2
     toc_float:
+      collapsed: false
       smooth_scroll: false
 knit:
   (function(inputFile, encoding) {

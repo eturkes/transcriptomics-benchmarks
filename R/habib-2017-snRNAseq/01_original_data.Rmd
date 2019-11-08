@@ -9,7 +9,6 @@ biblio-style: apalike
 link-citations: true
 output:
   html_document:
-    code_folding: show
     number_sections: true
     theme: lumen
     highlight: haddock

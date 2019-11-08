@@ -9,13 +9,13 @@ biblio-style: apalike
 link-citations: true
 output:
   html_document:
-    code_folding: show
     number_sections: true
     theme: lumen
     highlight: haddock
     toc: true
     toc_depth: 2
     toc_float:
+      collapsed: false
       smooth_scroll: false
 knit:
   (function(inputFile, encoding) {
@@ -185,6 +185,7 @@ This is the concluding section of the document. Here we write relevant results t
 ```{r}
 saveRDS(sce, file.path(results_dir, "data", "04", "sce.rds"))
 saveRDS(sce_hvg, file.path(results_dir, "data", "04", "sce_hvg.rds"))
+saveRDS(dec, file.path(results_dir, "data", "04", "dec.rds"))
 
 sessionInfo()
 ```
