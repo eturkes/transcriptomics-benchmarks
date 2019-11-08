@@ -60,10 +60,6 @@ div.main-container {max-width: none; width: 100%;}
 
 *This file is a part of the [Transcriptomics Benchmarks Project](https://github.com/eturkes/transcriptomics-benchmarks).*
 
-In this project we apply benchmarks on the cleaned dataset derived from the analysis in [github.com/eturkes/habib-2017-snRNAseq](https://github.com/eturkes/habib-2017-snRNAseq), which uses droplet-based UMI data from @habib_massively_2017.
-In this particular document we view the original dataset as well as apply some techniques without prior cleaning/dimensionality reduction.
-We start by setting some global variables and loading in any required packages.
-
 ```{r}
 data_str <- "habib-2017-snRNAseq"
 data_str_sub <- unlist(strsplit(data_str, "-"))[1]

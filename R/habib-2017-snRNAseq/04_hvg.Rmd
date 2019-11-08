@@ -62,8 +62,6 @@ div.main-container {max-width: none; width: 100%;}
 
 *This file is a part of the [Transcriptomics Benchmarks Project](https://github.com/eturkes/transcriptomics-benchmarks).*
 
-This report assesses the effect of extracting highly variable genes (HVGs) on downstream analysis.
-
 ```{r}
 assets_dir <- file.path(getwd(), "..", "..", "assets/habib-2017-snRNAseq")
 results_dir <- file.path(getwd(), "..", "..", "results/habib-2017-snRNAseq")
