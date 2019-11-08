@@ -65,6 +65,8 @@ div.main-container {max-width: none; width: 100%;}
 This report assesses the effect of extracting highly variable genes (HVGs) on downstream analysis.
 
 ```{r}
+data_str <- "habib-2017-snRNAseq"
+data_str_sub <- unlist(strsplit(data_str, "-"))[1]
 assets_dir <- file.path(getwd(), "..", "..", "assets/habib-2017-snRNAseq")
 results_dir <- file.path(getwd(), "..", "..", "results/habib-2017-snRNAseq")
 
@@ -165,6 +167,14 @@ metadata(choices)$chosen
 plot(choices$n.pcs, choices$n.clusters, xlab = "Number of PCs", ylab = "Number of clusters")
 abline(a = 1, b = 1, col = "red")
 abline(v = metadata(choices)$chosen, col = "grey80", lty = 2)
+```
+
+# Visualization
+
+```{r}
+plotPCA(sce, colour_by = paste0(data_str_sub, "_cluster_name"))
+plotPCA(sce, colour_by = "cell_id_stem")
+plotPCA(sce, colour_by = "detected")
 ```
 
 # References
