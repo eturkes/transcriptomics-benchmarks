@@ -25,3 +25,8 @@ rmarkdown::render(
   "habib-2017-snRNAseq/02_qc.Rmd",
   output_file = "../../results/habib-2017-snRNAseq/02-qc.html"
 )
+
+rmarkdown::render(
+  "habib-2017-snRNAseq/03_normalization.Rmd",
+  output_file = "../../results/habib-2017-snRNAseq/03-normalization.html"
+)
