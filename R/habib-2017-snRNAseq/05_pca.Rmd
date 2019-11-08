@@ -1,0 +1,178 @@
+---
+title: "05 PCA"
+author:
+  - name: "Emir Turkes [emir.turkes@eturkes.com]"
+  - name: "UK Dementia Research Institute at UCL"
+date: '`r strftime(Sys.time(), format = "%B %d, %Y")`'
+bibliography: "../../transcriptomics-benchmarks.bib"
+biblio-style: apalike
+link-citations: true
+output:
+  html_document:
+    number_sections: true
+    theme: lumen
+    highlight: haddock
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+knit:
+  (function(inputFile, encoding) {
+    rmarkdown::render(
+      inputFile, encoding = encoding,
+      output_file = "../../results/habib-2017-snRNAseq/05-pca.html")})
+---
+
+```{r, include = FALSE}
+#    This file is part of transcriptomics-benchmarks.
+#    Copyright (C) 2019  Emir Turkes
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#    Emir Turkes can be contacted at emir.turkes@eturkes.com
+
+knitr::opts_chunk$set(fig.width = 8.5, fig.height = 7)
+```
+
+<style type="text/css">
+body {font-size: 16px;}
+h1.title {font-size: 35px;}
+h1 {font-size: 24px;}
+h2 {font-size: 22px;}
+h3 {font-size: 20px;}
+.toc-content {padding-left: 0px; padding-right: 0px;}
+div.tocify {width: 100%;}
+.tocify-subheader .tocify-item {font-size: 0.95em; padding-left: 25px; text-indent: 0;}
+.tocify-subheader .tocify-subheader .tocify-item {
+  font-size: 0.90em; padding-left: 35px; text-indent: 0;}
+div.main-container {max-width: none; width: 100%;}
+</style>
+
+*This file is a part of the [Transcriptomics Benchmarks Project](https://github.com/eturkes/transcriptomics-benchmarks).*
+
+This report assesses the effect of extracting highly variable genes (HVGs) on downstream analysis.
+
+```{r}
+assets_dir <- file.path(getwd(), "..", "..", "assets/habib-2017-snRNAseq")
+results_dir <- file.path(getwd(), "..", "..", "results/habib-2017-snRNAseq")
+
+packages <- c(
+  "conflicted", "SingleCellExperiment", "magrittr", "dplyr", "ggplot2", "ggrepel", "S4Vectors",
+  "SummarizedExperiment", "DropletUtils", "scran", "BiocSingular", "scater", "Rtsne", "svd",
+  "SC3", "DT", "data.table", "Seurat", "uwot", "viridis", "rsvd")
+invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
+
+conflict_prefer("which", "BiocGenerics")
+options(stringsAsFactors = FALSE)
+
+# Create a unique cache and results data directory for each iterated section.
+if (!dir.exists(file.path(assets_dir, "cache", "05"))) {
+  dir.create(file.path(assets_dir, "cache", "05"), recursive = TRUE)}
+if (!dir.exists(file.path(results_dir, "data", "05"))) {
+  dir.create(file.path(results_dir, "data", "05"), recursive = TRUE)}
+
+# ggplot2 function providing custom aesthetics and automatic placement of categorical labels.
+# For continuous data, a colorbar is implemented.
+dim_red_plot <- function(data, x, y, col, type) {
+  gg <- ggplot(data, aes_string(x = x, y = y, color = col)) +
+    geom_point(alpha = 0.35, stroke = 0.05, shape = 21, aes_string(fill = col)) +
+    theme_classic() +
+    theme(
+      legend.position = "right", plot.title = element_text(hjust = 0.5),
+      legend.title = element_blank()) +
+    guides(color = guide_legend(override.aes = list(alpha = 1)))
+    if (type == "cat") {
+      gg <- gg + geom_label_repel(data = label_df2, aes(label = label), show.legend = FALSE)
+    } else if (type == "cont") {
+      gg <- ggplot(data, aes_string(x = x, y = y)) +
+        geom_point(alpha = 0.35, stroke = 0.05, aes_string(color = col)) +
+        theme_classic() +
+        theme(
+          legend.position = "right", plot.title = element_text(hjust = 0.5),
+          legend.title = element_blank()) +
+        scale_colour_viridis()}
+  gg}
+
+# Adds download buttons.
+datatable_custom <- function(dt) {
+  datatable(
+    dt,
+    extensions = "Buttons", options = list(dom = "Blfrtip", buttons = list(
+      "copy", "print",
+      list(extend = "collection", buttons = c("csv", "excel", "pdf"), text = "Download"))))}
+```
+
+We use the HVG SCE object from the previous analysis, `04_hvg.Rmd`.
+
+```{r}
+sce <- readRDS(file.path(results_dir, "data", "04", "sce_hvg.rds"))
+```
+
+# PC Selection
+
+## From Elbow Point
+
+```{r}
+percent_var <- attr(reducedDim(sce), "percentVar")
+# elbow <- PCAtools::findElbowPoint(percent_var)
+elbow <- 5
+elbow
+plot(percent_var, xlab = "PC", ylab = "Variance Explained (%)")
+abline(v = elbow, col = "red")
+```
+
+## From Technical Noise
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "05", "denoisePCA.rds")
+if (file.exists(rds)) {
+  sce <- readRDS(rds)
+} else {
+  dec <- readRDS(file.path(results_dir, "data", "04", "dec.rds"))
+  sce <- denoisePCA(sce, technical = dec, BPPARAM = MulticoreParam())
+  saveRDS(sce, rds)}
+```
+
+```{r}
+ncol(reducedDim(sce, "PCA"))
+```
+
+## From Population Structure
+
+```{r, cache = TRUE}
+rds <- file.path(assets_dir, "cache", "05", "choices.rds")
+if (file.exists(rds)) {
+  choices <- readRDS(rds)
+} else {
+  choices <- getClusteredPCs(reducedDim(sce, "PCA"))
+  saveRDS(choices, rds)}
+```
+
+```{r}
+metadata(choices)$chosen
+plot(choices$n.pcs, choices$n.clusters, xlab = "Number of PCs", ylab = "Number of clusters")
+abline(a = 1, b = 1, col = "red")
+abline(v = metadata(choices)$chosen, col = "grey80", lty = 2)
+```
+
+# References
+
+This is the concluding section of the document. Here we write relevant results to disk, output the sessionInfo, and create a bibliography for works cited.
+
+```{r}
+saveRDS(sce, file.path(results_dir, "data", "05", "sce.rds"))
+
+sessionInfo()
+```

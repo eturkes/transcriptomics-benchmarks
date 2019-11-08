@@ -35,3 +35,8 @@ rmarkdown::render(
   "habib-2017-snRNAseq/04_hvg.Rmd",
   output_file = "../../results/habib-2017-snRNAseq/04-hvg.html"
 )
+
+rmarkdown::render(
+  "habib-2017-snRNAseq/05_pca.Rmd",
+  output_file = "../../results/habib-2017-snRNAseq/05-pca.html"
+)
