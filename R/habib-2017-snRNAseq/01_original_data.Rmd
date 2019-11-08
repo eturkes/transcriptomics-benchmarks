@@ -109,8 +109,6 @@ dim_red_plot <- function(data, x, y, col, type) {
   gg}
 ```
 
-# Original Data
-
 As cluster labels and tSNE coordinates were released by the authors, Figure 2a and 2b were recreated in the analysis, along with their successful replication in addition to Figure 2d.
 Please see the analysis for details of the processing, which was performed in close accordance to what was done in @habib_massively_2017.
 
@@ -119,7 +117,7 @@ sce <- readRDS(file.path(assets_dir, "sce.rds"))
 sce
 ```
 
-### Habib Clusters Habib tSNE
+# Habib Clusters Habib tSNE
 
 ```{r}
 reducedDims(sce) <- SimpleList(
@@ -128,13 +126,13 @@ reducedDims(sce) <- SimpleList(
 plotReducedDim(sce, dimred = "TSNE", colour_by = paste0(data_str_sub, "_cluster_name"))
 ```
 
-### HVG Seurat Clusters Habib tSNE
+# HVG Seurat Clusters Habib tSNE
 
 ```{r}
 plotReducedDim(sce, dimred = "TSNE", colour_by = "seurat_hvg_clusters_name")
 ```
 
-### HVG Seurat Clusters HVG tSNE
+# HVG Seurat Clusters HVG tSNE
 
 ```{r}
 reducedDims(sce) <- SimpleList(
@@ -142,7 +140,7 @@ reducedDims(sce) <- SimpleList(
 plotReducedDim(sce, dimred = "TSNE", colour_by = paste0(data_str_sub, "_cluster_name"))
 ```
 
-### Habib Clusters HVG tSNE
+# Habib Clusters HVG tSNE
 
 ```{r}
 plotReducedDim(sce, dimred = "TSNE", colour_by = "seurat_hvg_clusters_name")
