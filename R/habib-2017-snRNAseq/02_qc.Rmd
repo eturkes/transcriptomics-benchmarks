@@ -177,6 +177,12 @@ sce <- addPerCellQC(sce, subsets = list(Mito = is_mito), BPPARAM = MulticorePara
 names(colData(sce))
 ```
 
+We set aside the object thus far to be saved, for a gene annotated object without QC.
+
+```{r}
+sce_anno <- sce
+```
+
 # With Fixed Thresholds
 
 ```{r}
@@ -300,6 +306,7 @@ This is the concluding section of the document. Here we write relevant results t
 
 ```{r}
 saveRDS(sce, file.path(results_dir, "data", "02", "sce.rds"))
+saveRDS(sce, file.path(results_dir, "data", "02", "sce_anno.rds"))
 saveRDS(sce, file.path(results_dir, "data", "02", "seurat.rds"))
 
 sessionInfo()

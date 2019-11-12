@@ -117,6 +117,7 @@ We use the SCE object from the previous analysis, `02_qc.Rmd`.
 
 ```{r}
 sce <- readRDS(file.path(results_dir, "data", "02", "sce.rds"))
+sce
 ```
 
 # Library Size Normalization
@@ -151,6 +152,22 @@ if (file.exists(rds)) {
 plotPCA(sce, colour_by = "cell_id_stem")
 ```
 
+# Scaling
+
+We create an assay with additional scaling applied.
+
+```{r}
+# Caching turned off due to error:
+# Error in lazyLoadDBinsertVariable(vars[i], from, datafile, ascii, compress,  :
+# long vectors not supported yet: connections.c:5984
+rds <- file.path(assets_dir, "cache", "03", "scalecounts.rds")
+if (file.exists(rds)) {
+  sce <- readRDS(rds)
+} else {
+  assay(sce, "scalecounts") <- t(scale(t((logcounts(sce)))))
+  saveRDS(sce, rds)}
+```
+
 # Seurat
 
 We also try Seurat's default approach.
@@ -165,9 +182,8 @@ if (file.exists(rds)) {
 } else {
   seurat <- as.Seurat(sce)
   seurat <- NormalizeData(seurat)
-  seurat <- FindVariableFeatures(seurat, nfeatures = dim(seurat)[1])
-  seurat <- ScaleData(seurat)
-  seurat <- RunPCA(seurat)
+  seurat <- ScaleData(seurat, features = rownames(seurat))
+  seurat <- RunPCA(seurat, features = rownames(seurat))
   saveRDS(seurat, rds)}
 ```
 
@@ -178,6 +194,8 @@ PCAPlot(seurat, group.by = "cell_id_stem")
 # sctransform
 
 Using the wrapper within Seurat.
+Note that the PCA is performed on HVGs returned from the `SCTransform` function.
+While using residuals from all the genes are preferable at this stage of benchmarking, memory limits were exceeded, even on a 32GB machine.
 
 ```{r}
 # Caching turned off due to error:
@@ -185,15 +203,57 @@ Using the wrapper within Seurat.
 # long vectors not supported yet: connections.c:5984
 rds <- file.path(assets_dir, "cache", "03", "sctrans.rds")
 if (file.exists(rds)) {
-  seurat <- readRDS(rds)
+  seurat_sct <- readRDS(rds)
 } else {
-  seurat <- SCTransform(seurat, variable.features.n = NULL)
-  seurat <- RunPCA(seurat)
-  saveRDS(seurat, rds)}
+  sce_anno <- readRDS(file.path(results_dir, "data", "02", "sce_anno.rds"))
+  seurat_sct <- as.Seurat(sce_anno, data = NULL)
+  seurat_sct <- SCTransform(seurat_sct, vars.to.regress = "subsets_Mito_percent", verbose = FALSE)
+  seurat_sct <- RunPCA(seurat_sct)
+  saveRDS(seurat_sct, rds)}
 ```
 
 ```{r}
-PCAPlot(seurat, group.by = "cell_id_stem")
+PCAPlot(seurat_sct, group.by = "cell_id_stem")
+```
+
+# Testing
+
+We view the contents of our various normalization methods.
+
+## SCE
+
+```{r}
+counts(sce)["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+logcounts(sce)["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+assay(sce, "scalecounts")["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+
+counts(sce)["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+logcounts(sce)["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+assay(sce, "scalecounts")["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+```
+
+## Seurat
+
+```{r}
+GetAssayData(seurat, slot = "counts")["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat, slot = "data")["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat, slot = "scale.data")["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+
+GetAssayData(seurat, slot = "counts")["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat, slot = "data")["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat, slot = "scale.data")["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+```
+
+## sctransform
+
+```{r}
+GetAssayData(seurat_sct, slot = "counts")["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat_sct, slot = "data")["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat_sct, slot = "scale.data")["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+
+GetAssayData(seurat_sct, slot = "counts")["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat_sct, slot = "data")["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat_sct, slot = "scale.data")["SST", names(which(counts(sce)["SST", ] > 0)[1])]
 ```
 
 # References
@@ -202,7 +262,8 @@ This is the concluding section of the document. Here we write relevant results t
 
 ```{r}
 saveRDS(sce, file.path(results_dir, "data", "03", "sce.rds"))
-saveRDS(sce, file.path(results_dir, "data", "03", "seurat.rds"))
+saveRDS(seurat, file.path(results_dir, "data", "03", "seurat.rds"))
+saveRDS(seurat_sct, file.path(results_dir, "data", "03", "seurat_sct.rds"))
 
 sessionInfo()
 ```
