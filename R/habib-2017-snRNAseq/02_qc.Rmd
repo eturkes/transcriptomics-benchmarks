@@ -227,9 +227,10 @@ gridExtra::grid.arrange(
 ```{r}
 lost <- calculateAverage((sce)[ , !sce$discard])
 kept <- calculateAverage((sce)[ , sce$discard])
-logged <- edgeR::cpm(cbind(lost, kept), log=TRUE, prior.count = 2)
+logged <- edgeR::cpm(cbind(lost, kept), log = TRUE, prior.count = 2)
 logFC <- logged[ , 1] - logged[ , 2]
 abundance <- rowMeans(logged)
+rm(logged)
 
 plot(abundance, logFC, xlab = "Average Count", ylab="LogFC (lost/kept)", pch = 16)
 points(abundance[is_mito], logFC[is_mito], col = "dodgerblue", pch = 16)
@@ -246,6 +247,7 @@ stats <- cbind(
   log10(colData(sce)$sum), log10(colData(sce)$detected), colData(sce)$subsets_Mito_percent)
 outlying <- adjOutlyingness(stats, only.outlyingness = TRUE)
 multi_outlier <- isOutlier(outlying, type = "higher")
+rm(stats)
 summary(multi_outlier)
 ```
 
@@ -258,10 +260,10 @@ bcrank <- barcodeRanks(counts(sce))
 
 # Only show unique points for plotting speed.
 uniq <- !duplicated(bcrank$rank)
+
 plot(
   bcrank$rank[uniq], bcrank$total[uniq], log = "xy",
   xlab = "Rank", ylab = "Total UMI count", cex.lab = 1.2)
-
 abline(h = metadata(bcrank)$inflection, col = "darkgreen", lty = 2)
 abline(h = metadata(bcrank)$knee, col = "dodgerblue", lty = 2)
 legend(
@@ -269,13 +271,27 @@ legend(
   lty = 2, cex = 1.2)
 ```
 
+# Seurat
+
+```{r}
+seurat <- as.Seurat(sce, data = NULL)
+VlnPlot(seurat, features = c("detected", "sum", "subsets_Mito_percent"), ncol = 3)
+plot1 <- FeatureScatter(seurat, feature1 = "sum", feature2 = "subsets_Mito_percent")
+plot2 <- FeatureScatter(seurat, feature1 = "sum", feature2 = "detected")
+rm(bcrank)
+CombinePlots(plots = list(plot1, plot2))
+```
+
 # Removal
 
-The adaptive within batch seemed most reasonable, so we perform the removal for use in downstream analyses.
+We subset the SCE object using the adaptive within batch approach and the Seurat object using the standard Seurat approach to be saved for downstream analysis.
 
 ```{r}
 sce <- sce[ , !sce$discard]
+seurat <- subset(seurat, subset = detected > 200 & detected < 2500 & subsets_Mito_percent < 5)
+rm(plot1, plot2)
 dim(sce)
+dim(seurat)
 ```
 
 # References
@@ -284,6 +300,7 @@ This is the concluding section of the document. Here we write relevant results t
 
 ```{r}
 saveRDS(sce, file.path(results_dir, "data", "02", "sce.rds"))
+saveRDS(sce, file.path(results_dir, "data", "02", "seurat.rds"))
 
 sessionInfo()
 ```
