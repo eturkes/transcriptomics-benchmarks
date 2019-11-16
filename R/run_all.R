@@ -16,32 +16,15 @@
 #
 #    Emir Turkes can be contacted at eturkes@bu.edu
 
-rmarkdown::render(
-  "habib-2017-snRNAseq/01_original_data.Rmd",
-  output_file = "../../results/habib-2017-snRNAseq/01-original-data.html"
-)
+# This script runs all files to perform the analysis.
+# Sections can be commented out as needed.
+
+setwd(dirname(parent.frame(2)$ofile)) # Move to location of this file.
+
+
+data_name <- "habib-2017-snRNAseq"
 
 rmarkdown::render(
-  "habib-2017-snRNAseq/02_qc.Rmd",
-  output_file = "../../results/habib-2017-snRNAseq/02-qc.html"
-)
-
-rmarkdown::render(
-  "habib-2017-snRNAseq/03_normalization.Rmd",
-  output_file = "../../results/habib-2017-snRNAseq/03-normalization.html"
-)
-
-rmarkdown::render(
-  "habib-2017-snRNAseq/04_hvg.Rmd",
-  output_file = "../../results/habib-2017-snRNAseq/04-hvg.html"
-)
-
-rmarkdown::render(
-  "habib-2017-snRNAseq/05_pca.Rmd",
-  output_file = "../../results/habib-2017-snRNAseq/05-pca.html"
-)
-
-rmarkdown::render(
-  "habib-2017-snRNAseq/06_nonlinear.Rmd",
-  output_file = "../../results/habib-2017-snRNAseq/06-nonlinear.html"
+  file.path(data_name, "01_cleaning.Rmd"),
+  output_file = file.path("..", "..", "results", data_name, "01-cleaning.html")
 )

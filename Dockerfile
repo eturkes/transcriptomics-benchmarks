@@ -20,41 +20,10 @@ FROM rocker/rstudio:3.6.1
 
 LABEL maintainer="Emir Turkes emir.turkes@eturkes.com"
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        zlib1g-dev \
-        libxml2-dev \
-        libpng-dev \
-    && Rscript -e "install.packages('conflicted')" \
-        -e "install.packages('rmarkdown')" \
-        -e "install.packages('rprojroot')" \
-        -e "install.packages('magrittr')" \
-        -e "install.packages('dplyr')" \
-        -e "install.packages('ggplot2')" \
-        -e "install.packages('ggrepel')" \
-        -e "install.packages('Rtsne')" \
-        -e "install.packages('svd')" \
-        -e "install.packages('Seurat')" \
-        -e "install.packages('DT')" \
-        -e "install.packages('data.table')" \
-        -e "install.packages('BiocManager')" \
-        -e "install.packages('uwot')" \
-        -e "install.packages('devtools')" \
-        -e "BiocManager::install('SingleCellExperiment')" \
-        -e "BiocManager::install('S4Vectors')" \
-        -e "BiocManager::install('SummarizedExperiment')" \
-        -e "BiocManager::install('DropletUtils')" \
-        -e "BiocManager::install('scran')" \
-        -e "BiocManager::install('BiocSingular')" \
-        -e "BiocManager::install('scater')" \
-        -e "BiocManager::install('SC3')" \
-        -e "BiocManager::install('splatter')" \
-        -e "BiocManager::install('biomaRt')" \
-        -e "BiocManager::install('PCAtools')" \
-        -e "devtools::install_github('AllenInstitute/scrattch.io')" \
-    && apt-get clean \
-    && rm -Rf /var/lib/apt/lists/ \
-        /tmp/downloaded_packages/ \
-        /tmp/*.rds
+RUN Rscript \
+    -e "install.packages('conflicted')" \
+    -e "install.packages('rmarkdown')" \
+    -e "install.packages('rprojroot')" \
+ && rm -Rf /tmp/*.rds
 
 COPY user-settings /home/rstudio/.rstudio/monitored/user-settings/
