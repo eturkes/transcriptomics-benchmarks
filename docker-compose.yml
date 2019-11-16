@@ -20,13 +20,13 @@ version: "3"
 
 services:
   all:
-    image: eturkes/transcriptomics-benchmarks:R3.6.1v5
+    image: eturkes/transcriptomics-benchmarks:R3.6.1v6
     volumes:
       - ".:/transcriptomics-benchmarks:rw"
     command: Rscript -e "setwd('/transcriptomics-benchmarks/R/')" -e "source('/transcriptomics-benchmarks/R/run_all.R')"
 
   rstudio:
-    image: eturkes/transcriptomics-benchmarks:R3.6.1v5
+    image: eturkes/transcriptomics-benchmarks:R3.6.1v6
     volumes:
       - ".:/home/rstudio/transcriptomics-benchmarks:rw"
     ports:

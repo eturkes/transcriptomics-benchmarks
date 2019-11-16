@@ -39,6 +39,7 @@ RUN apt-get update \
         -e "install.packages('data.table')" \
         -e "install.packages('BiocManager')" \
         -e "install.packages('uwot')" \
+        -e "install.packages('devtools')" \
         -e "BiocManager::install('SingleCellExperiment')" \
         -e "BiocManager::install('S4Vectors')" \
         -e "BiocManager::install('SummarizedExperiment')" \
@@ -50,6 +51,7 @@ RUN apt-get update \
         -e "BiocManager::install('splatter')" \
         -e "BiocManager::install('biomaRt')" \
         -e "BiocManager::install('PCAtools')" \
+        -e "devtools::install_github('AllenInstitute/scrattch.io')" \
     && apt-get clean \
     && rm -Rf /var/lib/apt/lists/ \
         /tmp/downloaded_packages/ \
