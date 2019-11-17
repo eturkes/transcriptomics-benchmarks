@@ -62,13 +62,15 @@ The data here is derived from @`r unlist(strsplit(getwd(), "/"))[6]` and will be
 #
 #    Emir Turkes can be contacted at emir.turkes@eturkes.com
 
-data_name <- unlist(strsplit(getwd(), "/"))[6] # Extract name of dataset.
-data_name_stem <- unlist(strsplit(data_name, "-"))[1] # Data name up to the first hyphen.
 analysis_no <- "01"
-assets_dir <- file.path(getwd(), "..", "..", "assets", data_name) # Caches and temp files.
+data_name <- unlist(strsplit(getwd(), "/"))[6] # Name of dataset.
+data_name_stem <- unlist(strsplit(data_name, "-"))[1] # `data_name` up to the first hyphen.
+download_name <- "GTEx_droncseq_hip_pcf" # Name of download file corresponding to dataset.
+data_dir <- file.path(getwd(), "..", "..", "data", data_name) # Publicly available data.
+assets_dir <- file.path(getwd(), "..", "..", "assets", data_name) # Misc binaries and temp files.
 results_dir <- file.path(getwd(), "..", "..", "results", data_name)
 
-# Create a unique cache and results data directory for each iterated section.
+# Unique cache and results directory for each analysis number.
 if (!dir.exists(file.path(assets_dir, "cache", analysis_no))) {
   dir.create(file.path(assets_dir, "cache", analysis_no), recursive = TRUE)
 }
@@ -76,10 +78,178 @@ if (!dir.exists(file.path(results_dir, "data", analysis_no))) {
   dir.create(file.path(results_dir, "data", analysis_no), recursive = TRUE)
 }
 
-packages <- c("conflicted")
+packages <- c(
+  "conflicted", "BiocFileCache", "data.table", "DT", "SingleCellExperiment", "biomaRt", "dplyr"
+)
 invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
 
 options(stringsAsFactors = FALSE)
+```
+
+# Original Data {.tabset}
+
+This section provides a brief look at the raw data before manipulation.
+
+```{r}
+# Download data using `BiocFileCache`.
+data <- bfcrpath(BiocFileCache(data_dir, ask = FALSE), file.path(
+  "https://storage.googleapis.com/gtex_additional_datasets/single_cell_data",
+  paste0(download_name, ".tar")
+))
+untar(data, exdir = tempdir())
+```
+
+## Counts
+
+```{r}
+counts <- fread(
+  file.path(tempdir(), download_name, paste0(download_name, ".umi_counts.txt.gz")),
+  data.table = FALSE
+)
+datatable(counts[1:5, 1:3])
+```
+
+## Clusters
+
+```{r}
+# The original clusters file, `GTEx_droncseq_hip_pcf.clusters.txt`, has several inconsistencies.
+# Specifically in clusters 15-18, which do not match those in the original publication.
+# Therefore we use Supplementary Table 7 (nmeth.4407-S10.xlsx), which does not have those issues.
+# However, because cluster 11 is incorrectly named in this table, we must correct that.
+# Also, as this file contained non-standard formatting, some manual editing was done for use in R.
+clust <- fread(
+  file.path(assets_dir, "nmeth.4407-S10-edited.txt"), data.table = FALSE
+)
+datatable(clust[1:5, ])
+```
+
+## tSNE
+
+```{r}
+tsne <- fread(
+  file.path(tempdir(), download_name, paste0(download_name, ".tsne.txt.gz")), data.table = FALSE
+)
+datatable(tsne[1:5, ])
+```
+
+# Preliminary Cleaning
+
+Here we do any data wrangling neccessary to transform the data into more convenient formats for downstream analysis.
+
+## Counts
+
+```{r}
+# Move genes out of matrix.
+rownames(counts) <- counts[ , 1]
+counts <- as.matrix(counts[ , -1])
+
+# Define each batch by the common stem of sample names.
+batch <- sapply(colnames(counts), function(xx) strsplit(xx, "_")[[1]][1], USE.NAMES = FALSE)
+
+# Prepare `colData` for SingleCellExperiment object.
+colData <- data.frame(sample = colnames(counts), batch = batch, check.names = FALSE)
+
+datatable(counts[1:5, 1:3])
+
+# Convert to dgCMatrix after datatable, as they are incompatible.
+counts <- Matrix::Matrix(counts, sparse = TRUE) # `Matrix` conflicts with `SingleCellExperiment`.
+```
+
+## Clusters
+
+```{r}
+# Fix mislabeled cluster and give unique names for unclassified clusters.
+for (i in seq_len(nrow(clust))) {
+  if (clust[i, 4] == 11) {
+    clust[i, 5] <- "ODC2"
+  } else if (clust[i, 4] == 16) {
+    clust[i, 5] <- "Unlabeled1"
+  } else if (clust[i, 4] == 17) {
+    clust[i, 5] <- "Unlabeled2"
+  } else if (clust[i, 4] == 18) {
+    clust[i, 5] <- "Unlabeled3"
+  }
+}
+
+# Clean up `clust` and align rows to those in `colData`.
+clust <- clust[ , -c(2:4)]
+names(clust) <- c("sample", "clust")
+clust <- clust[match(colData$sample, clust$sample), ]
+rownames(clust) <- NULL
+datatable(clust[1:5, ])
+```
+
+## tSNE
+
+```{r}
+names(tsne) = c("sample", paste0("tsne", 1:2))
+datatable(tsne[1:5, ])
+```
+
+## SingleCellExperiment
+
+The data is now sufficiently prepared to form an SCE object.
+We also set aside an unprocessed copy of the object to be saved later.
+
+```{r}
+colData <- cbind(colData, clust[ , names(clust) != "sample"], tsne[ , names(tsne) != "sample"])
+sce <- SingleCellExperiment(assays = list(counts = counts), colData = colData)
+sce_orig <- sce
+rm(counts, clust, tsne, colData)
+sce
+```
+
+## Gene Annotations
+
+We additional identifiers, which are useful for resolving ambiguity in gene symbols and are required for some packages.
+
+```{r}
+# Cache the results.
+rds <- file.path(assets_dir, "cache", analysis_no, "gene_anno.rds")
+if (file.exists(rds)) {
+  gene_anno <- readRDS(rds)
+} else {
+  # Transcripts were aligned to hg19 in the original publication.
+  # GRCh37 is the near equivalent available from Ensembl.
+  mart <- useEnsembl(biomart = "ensembl", GRCh = 37, dataset = "hsapiens_gene_ensembl")
+
+  attributes <- c(
+  "external_gene_name", "ensembl_gene_id", "entrezgene_id",
+  "hgnc_symbol", "description", "chromosome_name"
+  )
+  gene_anno <- getBM(
+    attributes = attributes, filters = "external_gene_name", values = rownames(sce), mart = mart
+  )
+  rm(mart)
+  saveRDS(gene_anno, rds)
+}
+```
+
+```{r}
+# Remove genes not in the RNA-seq dataset.
+remove_genes <- which(!gene_anno$external_gene_name %in% rownames(sce))
+gene_anno <- gene_anno[-remove_genes, ]
+
+# Remove annotations to scaffolds, assembly patches, and alternative loci.
+chromosomes <- c(1:22, "X", "Y", "MT")
+gene_anno <- gene_anno[which(gene_anno$chromosome_name %in% chromosomes), ]
+
+# Remove duplicates.
+dup <- table(gene_anno$external_gene_name)
+dup <- sort(dup[dup > 1], decreasing = TRUE)
+dup <- which(gene_anno$external_gene_name %in% names(dup))
+gene_anno2 <- gene_anno[dup, ]
+gene_anno2 <- gene_anno2[which(gene_anno2$hgnc_symbol == gene_anno2$external_gene_name), ]
+gene_anno2 <- distinct(gene_anno2, external_gene_name, .keep_all = TRUE) # Random selection method.
+gene_anno <- rbind(gene_anno[-dup, ], gene_anno2)
+
+# Remove missing.
+keep_genes <- match(gene_anno$external_gene_name, rownames(sce))
+sce <- sce[keep_genes, ]
+
+rowData(sce) <- gene_anno
+rm(gene_anno, gene_anno2)
+names(rowData(sce))
 ```
 
 # References
@@ -87,5 +257,8 @@ options(stringsAsFactors = FALSE)
 This is the concluding section of the document. Here we write relevant results to disk, output the `sessionInfo`, and create a bibliography for works cited.
 
 ```{r}
+saveRDS(sce, file.path(results_dir, "data", analysis_no, "sce.rds"))
+saveRDS(sce_orig, file.path(results_dir, "data", analysis_no, "sce_orig.rds"))
+
 sessionInfo()
 ```
