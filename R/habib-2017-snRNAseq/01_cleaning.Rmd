@@ -117,10 +117,10 @@ datatable(counts[1:5, 1:3])
 # Therefore we use Supplementary Table 7 (nmeth.4407-S10.xlsx), which does not have those issues.
 # However, because cluster 11 is incorrectly named in this table, we must correct that.
 # Also, as this file contained non-standard formatting, some manual editing was done for use in R.
-clust <- fread(
+cluster <- fread(
   file.path(assets_dir, "nmeth.4407-S10-edited.txt"), data.table = FALSE
 )
-datatable(clust[1:5, ])
+datatable(cluster[1:5, ])
 ```
 
 ## tSNE
@@ -132,7 +132,7 @@ tsne <- fread(
 datatable(tsne[1:5, ])
 ```
 
-# Preliminary Cleaning
+# Cleaning
 
 Here we do any data wrangling neccessary to transform the data into more convenient formats for downstream analysis.
 
@@ -159,30 +159,33 @@ counts <- Matrix::Matrix(counts, sparse = TRUE) # `Matrix` conflicts with `Singl
 
 ```{r}
 # Fix mislabeled cluster and give unique names for unclassified clusters.
-for (i in seq_len(nrow(clust))) {
-  if (clust[i, 4] == 11) {
-    clust[i, 5] <- "ODC2"
-  } else if (clust[i, 4] == 16) {
-    clust[i, 5] <- "Unlabeled1"
-  } else if (clust[i, 4] == 17) {
-    clust[i, 5] <- "Unlabeled2"
-  } else if (clust[i, 4] == 18) {
-    clust[i, 5] <- "Unlabeled3"
+for (i in seq_len(nrow(cluster))) {
+  if (cluster[i, 4] == 11) {
+    cluster[i, 5] <- "ODC2"
+  } else if (cluster[i, 4] == 16) {
+    cluster[i, 5] <- "Unlabeled1"
+  } else if (cluster[i, 4] == 17) {
+    cluster[i, 5] <- "Unlabeled2"
+  } else if (cluster[i, 4] == 18) {
+    cluster[i, 5] <- "Unlabeled3"
   }
 }
 
-# Clean up `clust` and align rows to those in `colData`.
-clust <- clust[ , -c(2:4)]
-names(clust) <- c("sample", "clust")
-clust <- clust[match(colData$sample, clust$sample), ]
-rownames(clust) <- NULL
-datatable(clust[1:5, ])
+# Clean up `cluster` and align rows to those in `colData`.
+cluster <- cluster[ , -c(2:3)]
+names(cluster) <- c(
+  "sample", paste0(data_name_stem, "_cluster"), paste0(data_name_stem, "_cluster_name")
+)
+cluster$habib_cluster <- factor(cluster$habib_cluster)
+cluster <- cluster[match(colData$sample, cluster$sample), ]
+rownames(cluster) <- NULL
+datatable(cluster[1:5, ])
 ```
 
 ## tSNE
 
 ```{r}
-names(tsne) = c("sample", paste0("tsne", 1:2))
+names(tsne) <- c("sample", paste0(data_name_stem, "_tsne", 1:2))
 datatable(tsne[1:5, ])
 ```
 
@@ -192,10 +195,10 @@ The data is now sufficiently prepared to form an SCE object.
 We also set aside an unprocessed copy of the object to be saved later.
 
 ```{r}
-colData <- cbind(colData, clust[ , names(clust) != "sample"], tsne[ , names(tsne) != "sample"])
+colData <- cbind(colData, tsne[ , names(tsne) != "sample"], cluster[ , names(cluster) != "sample"])
 sce <- SingleCellExperiment(assays = list(counts = counts), colData = colData)
 sce_orig <- sce
-rm(counts, clust, tsne, colData)
+rm(counts, cluster, tsne, colData)
 sce
 ```
 
