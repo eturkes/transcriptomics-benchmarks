@@ -62,7 +62,7 @@ The data here is derived from @`r unlist(strsplit(getwd(), "/"))[6]` and will be
 #
 #    Emir Turkes can be contacted at emir.turkes@eturkes.com
 
-analysis_no <- "01"
+analysis_no <- 1
 data_name <- unlist(strsplit(getwd(), "/"))[6] # Name of dataset.
 data_name_stem <- unlist(strsplit(data_name, "-"))[1] # `data_name` up to the first hyphen.
 download_name <- "GTEx_droncseq_hip_pcf" # Name of download file corresponding to dataset.
@@ -71,11 +71,11 @@ assets_dir <- file.path(getwd(), "..", "..", "assets", data_name) # Misc binarie
 results_dir <- file.path(getwd(), "..", "..", "results", data_name)
 
 # Unique cache and results directory for each analysis number.
-if (!dir.exists(file.path(assets_dir, "cache", analysis_no))) {
-  dir.create(file.path(assets_dir, "cache", analysis_no), recursive = TRUE)
+if (!dir.exists(file.path(assets_dir, "cache", paste0("0", analysis_no)))) {
+  dir.create(file.path(assets_dir, "cache", paste0("0", analysis_no)), recursive = TRUE)
 }
-if (!dir.exists(file.path(results_dir, "data", analysis_no))) {
-  dir.create(file.path(results_dir, "data", analysis_no), recursive = TRUE)
+if (!dir.exists(file.path(results_dir, "data", paste0("0", analysis_no)))) {
+  dir.create(file.path(results_dir, "data", paste0("0", analysis_no)), recursive = TRUE)
 }
 
 packages <- c(
@@ -212,7 +212,7 @@ We additional identifiers, which are useful for resolving ambiguity in gene symb
 
 ```{r}
 # Cache the results.
-rds <- file.path(assets_dir, "cache", analysis_no, "gene_anno.rds")
+rds <- file.path(assets_dir, "cache", paste0("0", analysis_no), "gene_anno.rds")
 if (file.exists(rds)) {
   gene_anno <- readRDS(rds)
 } else {
@@ -283,8 +283,8 @@ red_dim_plot(sce, paste0(data_name_stem, "_tsne", 1), paste0(data_name_stem, "_t
 This is the concluding section of the document. Here we write relevant results to disk, output the `sessionInfo`, and create a bibliography for works cited.
 
 ```{r}
-saveRDS(sce, file.path(results_dir, "data", analysis_no, "sce.rds"))
-saveRDS(sce_orig, file.path(results_dir, "data", analysis_no, "sce_orig.rds"))
+saveRDS(sce, file.path(results_dir, "data", paste0("0", analysis_no), "sce.rds"))
+saveRDS(sce_orig, file.path(results_dir, "data", paste0("0", analysis_no), "sce_orig.rds"))
 
 sessionInfo()
 ```
