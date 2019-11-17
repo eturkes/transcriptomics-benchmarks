@@ -203,8 +203,8 @@ We also set aside an unprocessed copy of the object to be saved later.
 ```{r}
 colData <- cbind(colData, tsne[ , names(tsne) != "sample"], cluster[ , names(cluster) != "sample"])
 sce <- SingleCellExperiment(assays = list(counts = counts), colData = colData)
-sce_orig <- sce
 rm(counts, cluster, tsne, colData)
+sce_orig <- sce
 sce
 ```
 
