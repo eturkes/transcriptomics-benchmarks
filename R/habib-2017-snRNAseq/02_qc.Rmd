@@ -210,7 +210,7 @@ if (protocol_type == "droplet") {
 ```{r, fig.width = 11}
 rm(bcrank)
 
-seurat <- as.Seurat(sce, data = NULL)
+seurat <- as.Seurat(sce, data = NULL, verbose = FALSE)
 VlnPlot(
   seurat, features = c("detected", "sum", "subsets_mito_percent", "subsets_ribo_percent"), ncol = 4
 )

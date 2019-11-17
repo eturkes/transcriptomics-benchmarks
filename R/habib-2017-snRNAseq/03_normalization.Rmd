@@ -112,6 +112,7 @@ if (file.exists(rds)) {
   sce <- computeSumFactors(sce, cluster = cluster, min.mean = 0.1, BPPARAM = MulticoreParam())
   rm(clusters)
   sce <- logNormCounts(sce)
+  set.seed(1)
   sce <- runPCA(sce, BPPARAM = MulticoreParam())
   add_df <- data.frame(reducedDim(sce, "PCA")[ , 1:2])
   names(add_df) <- paste0("pca", seq(ncol(add_df)))
@@ -132,7 +133,7 @@ rds <- file.path(assets_dir, "cache", paste0("0", analysis_no), "seurat.rds")
 if (file.exists(rds)) {
   seurat <- readRDS(rds)
 } else {
-  seurat <- as.Seurat(sce)
+  seurat <- as.Seurat(sce, verbose = FALSE)
   seurat <- NormalizeData(seurat, verbose = FALSE)
   seurat <- ScaleData(seurat, verbose = FALSE)
   seurat <- RunPCA(seurat, features = rownames(seurat), verbose = FALSE)
@@ -140,6 +141,7 @@ if (file.exists(rds)) {
   names(add_df) <- paste0("pca", seq(ncol(add_df)))
   seurat$pca1 <- add_df$pca1
   seurat$pca2 <- add_df$pca2
+  rm(add_df)
   saveRDS(seurat, rds)
 }
 
