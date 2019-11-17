@@ -28,3 +28,7 @@ rmarkdown::render(
   file.path(data_name, "01_cleaning.Rmd"),
   output_file = file.path("..", "..", "results", data_name, "01-cleaning.html")
 )
+rmarkdown::render(
+  file.path(data_name, "02_qc.Rmd"),
+  output_file = file.path("..", "..", "results", data_name, "02-qc.html")
+)

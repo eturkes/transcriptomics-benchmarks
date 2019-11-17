@@ -70,3 +70,22 @@ red_dim_plot <- function(data, x, y, color, type = NULL) {
   }
   gg
 }
+
+#' Adds download buttons and horizontal scrolling to `DT::datatable`
+#'
+#' @param dt A data.table object.
+#' @examples
+#' datatable_custom(my_data_table)
+#'
+datatable_custom <- function(dt) {
+  datatable(
+    dt, extensions = "Buttons",
+    options = list(
+      scrollX = TRUE, dom = "Blfrtip",
+      buttons = list(
+        "copy", "print",
+        list(extend = "collection", buttons = c("csv", "excel", "pdf"), text = "Download")
+      )
+    )
+  )
+}

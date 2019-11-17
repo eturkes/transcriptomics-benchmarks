@@ -1,0 +1,249 @@
+---
+title: '02 QC - `r unlist(strsplit(getwd(), "/"))[6]`'
+author:
+  - name: "Emir Turkes [emir.turkes@eturkes.com]"
+  - name: "UK Dementia Research Institute at UCL"
+date: '`r strftime(Sys.time(), format = "%B %d, %Y")`'
+bibliography: '../../`r unlist(strsplit(getwd(), "/"))[4]`.bib'
+link-citations: true
+output:
+  html_document:
+    code_folding: hide
+    number_sections: true
+    theme: lumen
+    highlight: haddock
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_file = file.path(
+    "..", "..", "results", unlist(strsplit(getwd(), "/"))[6], "02-qc.html"
+  ))})
+---
+
+<style type="text/css">
+body {font-size: 16px;}
+h1.title {font-size: 35px;}
+h1 {font-size: 24px;}
+h2 {font-size: 22px;}
+h3 {font-size: 20px;}
+.toc-content {padding-left: 0px; padding-right: 0px;}
+div.tocify {width: 100%;}
+.tocify-subheader .tocify-item {font-size: 0.95em; padding-left: 25px; text-indent: 0;}
+div.main-container {max-width: none; width: 100%;}
+</style>
+
+*This file is a part of the [Transcriptomics Benchmarks Project](https://github.com/eturkes/transcriptomics-benchmarks), which aims to benchmark a wide variety of transcriptomics tools on real and simulated datasets.*
+
+In this particular document we assess the performance of several QC techniques.
+The data here is derived from @`r unlist(strsplit(getwd(), "/"))[6]` and will be referenced using the name ``r unlist(strsplit(getwd(), "/"))[6]``.
+
+```{r}
+# Load in necessary boilerplate and libraries.
+# --------------------------------------------
+
+#    This file is part of transcriptomics-benchmarks.
+#    Copyright (C) 2019  Emir Turkes
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#    Emir Turkes can be contacted at emir.turkes@eturkes.com
+
+analysis_no <- 2
+protocol_type <- "droplet"
+data_name <- unlist(strsplit(getwd(), "/"))[6] # Name of dataset.
+data_name_stem <- unlist(strsplit(data_name, "-"))[1] # `data_name` up to the first hyphen.
+assets_dir <- file.path(getwd(), "..", "..", "assets", data_name) # Misc binaries and temp files.
+results_dir <- file.path(getwd(), "..", "..", "results", data_name)
+
+# Unique cache and results directory for each analysis number.
+if (!dir.exists(file.path(assets_dir, "cache", paste0("0", analysis_no)))) {
+  dir.create(file.path(assets_dir, "cache", paste0("0", analysis_no)), recursive = TRUE)
+}
+if (!dir.exists(file.path(results_dir, "data", paste0("0", analysis_no)))) {
+  dir.create(file.path(results_dir, "data", paste0("0", analysis_no)), recursive = TRUE)
+}
+
+packages <- c(
+  "conflicted", "SingleCellExperiment", "scater", "DT", "data.table", "gridExtra", "robustbase",
+  "DropletUtils", "Seurat"
+)
+invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
+source(file.path(getwd(), "..", "utils.R"))
+
+options(stringsAsFactors = FALSE)
+
+# Use output of previous analysis.
+sce <- readRDS(file.path(results_dir, "data", paste0("0", analysis_no - 1), "sce.rds"))
+```
+
+# QC Metrics
+
+First, we add QC metric metadata to the SCE object.
+We also set aside a copy of the object for a version with metrics but no removal performed.
+
+```{r}
+ribo_genes <- read.table(
+  file.path(getwd(), "..", "..", "hugo-ribo-genes.txt"), sep = "\t", header = TRUE
+)
+is_ribo <- which(rowData(sce)$external_gene_name %in% ribo_genes$Approved.symbol)
+is_mito <- which(rowData(sce)$chromosome_name == "MT")
+rm(ribo_genes)
+
+sce <- addPerCellQC(sce, subsets = list(ribo = is_ribo, mito = is_mito), BPPARAM = MulticoreParam())
+sce <- addPerFeatureQC(sce, BPPARAM = MulticoreParam())
+
+sce_metric <- sce
+
+names(colData(sce))
+names(rowData(sce))
+```
+
+# Fixed Thresholds
+
+```{r}
+lib_size <- colData(sce)$sum < 1e5
+num_exprs <- colData(sce)$detected < 5e3
+mito <- colData(sce)$subsets_mito_percent > 10
+ribo <- colData(sce)$subsets_ribo_percent > 10
+discard <- lib_size | num_exprs | mito | ribo
+
+datatable_custom(data.table(
+    low_lib_size = sum(lib_size), low_n_features = sum(num_exprs),
+    high_subsets_mito_percent = sum(mito), high_subsets_ribo_percent = sum(ribo),
+    discard = sum(discard)))
+```
+
+# Adaptive Thresholds
+
+```{r}
+remove <- quickPerCellQC(
+  sce, percent_subsets = c("subsets_mito_percent", "subsets_ribo_percent"), batch = sce$batch
+)
+sce$discard <- remove$discard
+datatable_custom(t(colSums(as.matrix(remove))))
+```
+
+```{r, fig.width = 11}
+rm(remove)
+
+grid.arrange(
+  plotColData(sce, x = "batch", y = "sum", colour_by = "discard", theme_size = 6) +
+    scale_y_log10() + ggtitle("Total count"),
+  plotColData(sce, x = "batch", y = "detected", colour_by = "discard", theme_size = 6) +
+    scale_y_log10() + ggtitle("Detected features"),
+  plotColData(sce, x = "batch", y = "subsets_mito_percent", colour_by = "discard", theme_size = 6) +
+    ggtitle("Mito percent"),
+  plotColData(sce, x = "batch", y = "subsets_ribo_percent", colour_by = "discard", theme_size = 6) +
+    ggtitle("Rito percent"),
+  ncol = 1
+)
+```
+
+We also check if the removals correlate with upregulated genes, in which case caution is advised as we may remove a biologically interesting population.
+
+```{r}
+lost <- calculateAverage((sce)[ , !sce$discard])
+kept <- calculateAverage((sce)[ , sce$discard])
+logged <- edgeR::cpm(cbind(lost, kept), log = TRUE, prior.count = 2) # `edgeR` conflicts with SCE.
+logFC <- logged[ , 1] - logged[ , 2]
+abundance <- rowMeans(logged)
+rm(logged)
+
+plot(abundance, logFC, xlab = "Average Count", ylab="LogFC (lost/kept)", pch = 16)
+points(abundance[is_mito], logFC[is_mito], col = "dodgerblue", pch = 16)
+```
+
+# robustbase
+
+As an alternate approach, `robustbase` quantifies outlyingness using their own QC methods.
+
+```{r}
+stats <- cbind(
+  log10(colData(sce)$sum), log10(colData(sce)$detected),
+  colData(sce)$subsets_mito_percent, colData(sce)$subsets_ribo_percent
+)
+outlying <- adjOutlyingness(stats, only.outlyingness = TRUE)
+rm(stats)
+multi_outlier <- isOutlier(outlying, type = "higher")
+summary(multi_outlier)
+```
+
+# Protocol Specific
+
+Here we carry out any protocol specific techniques, such as identification of empty droplets in a droplet-based experiment.
+The steps carried out are designated by a boolean at the beginning of this report.
+
+```{r}
+if (protocol_type == "droplet") {
+  # Identify empty droplets as those with a low UMI count.
+  bcrank <- barcodeRanks(counts(sce))
+  uniq <- !duplicated(bcrank$rank) # Only show unique points for plotting speed.
+  plot(
+    bcrank$rank[uniq], bcrank$total[uniq], log = "xy",
+    xlab = "Rank", ylab = "Total UMI count", cex.lab = 1.2
+  )
+  abline(h = metadata(bcrank)$inflection, col = "darkgreen", lty = 2)
+  abline(h = metadata(bcrank)$knee, col = "dodgerblue", lty = 2)
+  legend(
+    "bottomleft", legend = c("Inflection", "Knee"), col = c("darkgreen", "dodgerblue"),
+    lty = 2, cex = 1.2
+  )
+}
+```
+
+# Seurat
+
+```{r, fig.width = 11}
+rm(bcrank)
+
+seurat <- as.Seurat(sce, data = NULL)
+VlnPlot(
+  seurat, features = c("detected", "sum", "subsets_mito_percent", "subsets_ribo_percent"), ncol = 4
+)
+
+plot1 <- FeatureScatter(seurat, feature1 = "sum", feature2 = "subsets_mito_percent")
+plot2 <- FeatureScatter(seurat, feature1 = "sum", feature2 = "subsets_ribo_percent")
+CombinePlots(plots = list(plot1, plot2))
+```
+
+# Removal
+
+We subset the SCE object using the adaptive approach and the Seurat object using the standard Seurat approach.
+
+```{r}
+rm(plot1, plot2)
+
+sce <- sce[ , !sce$discard]
+seurat <- subset(
+  seurat,
+  subset = detected > 200 & detected < 2500 & subsets_mito_percent < 5 & subsets_ribo_percent < 5
+)
+print(paste0("SCE: ", dim(sce)[1], " ", dim(sce)[2]))
+print(paste0("Seurat: ", dim(seurat)[1], " ", dim(seurat)[2]))
+```
+
+# References
+
+This is the concluding section of the document. Here we write relevant results to disk, output the `sessionInfo`, and create a bibliography for works cited.
+
+```{r}
+saveRDS(sce, file.path(results_dir, "data", paste0("0", analysis_no), "sce.rds"))
+saveRDS(sce_metric, file.path(results_dir, "data", paste0("0", analysis_no), "sce_metric.rds"))
+saveRDS(seurat, file.path(results_dir, "data", paste0("0", analysis_no), "seurat.rds"))
+
+sessionInfo()
+```
