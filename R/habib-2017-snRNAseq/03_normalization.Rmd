@@ -1,0 +1,184 @@
+---
+title: '03 Normalization - `r unlist(strsplit(getwd(), "/"))[6]`'
+author:
+  - name: "Emir Turkes [emir.turkes@eturkes.com]"
+  - name: "UK Dementia Research Institute at UCL"
+date: '`r strftime(Sys.time(), format = "%B %d, %Y")`'
+bibliography: '../../`r unlist(strsplit(getwd(), "/"))[4]`.bib'
+link-citations: true
+output:
+  html_document:
+    code_folding: hide
+    number_sections: true
+    theme: lumen
+    highlight: haddock
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_file = file.path(
+    "..", "..", "results", unlist(strsplit(getwd(), "/"))[6], "03-normalization.html"
+  ))})
+---
+
+<style type="text/css">
+body {font-size: 16px;}
+h1.title {font-size: 35px;}
+h1 {font-size: 24px;}
+h2 {font-size: 22px;}
+h3 {font-size: 20px;}
+.toc-content {padding-left: 0px; padding-right: 0px;}
+div.tocify {width: 100%;}
+.tocify-subheader .tocify-item {font-size: 0.95em; padding-left: 25px; text-indent: 0;}
+div.main-container {max-width: none; width: 100%;}
+</style>
+
+*This file is a part of the [Transcriptomics Benchmarks Project](https://github.com/eturkes/transcriptomics-benchmarks), which aims to benchmark a wide variety of transcriptomics tools on real and simulated datasets.*
+
+In this particular document we assess the performance of several normalization techniques.
+The data here is derived from @`r unlist(strsplit(getwd(), "/"))[6]` and will be referenced using the name ``r unlist(strsplit(getwd(), "/"))[6]``.
+
+```{r}
+# Load in necessary boilerplate and libraries.
+# --------------------------------------------
+
+#    This file is part of transcriptomics-benchmarks.
+#    Copyright (C) 2019  Emir Turkes
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#    Emir Turkes can be contacted at emir.turkes@eturkes.com
+
+analysis_no <- 3
+data_name <- unlist(strsplit(getwd(), "/"))[6] # Name of dataset.
+data_name_stem <- unlist(strsplit(data_name, "-"))[1] # `data_name` up to the first hyphen.
+assets_dir <- file.path(getwd(), "..", "..", "assets", data_name) # Misc binaries and temp files.
+results_dir <- file.path(getwd(), "..", "..", "results", data_name)
+
+# Unique cache and results directory for each analysis number.
+if (!dir.exists(file.path(assets_dir, "cache", paste0("0", analysis_no)))) {
+  dir.create(file.path(assets_dir, "cache", paste0("0", analysis_no)), recursive = TRUE)
+}
+if (!dir.exists(file.path(results_dir, "data", paste0("0", analysis_no)))) {
+  dir.create(file.path(results_dir, "data", paste0("0", analysis_no)), recursive = TRUE)
+}
+
+packages <- c("conflicted", "SingleCellExperiment", "scater", "scran", "Seurat", "future")
+invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
+source(file.path(getwd(), "..", "utils.R"))
+
+options(stringsAsFactors = FALSE)
+plan("multiprocess") # Parallel processing for Seurat.
+
+# Use output of previous analysis.
+sce <- readRDS(file.path(results_dir, "data", paste0("0", analysis_no - 1), "sce.rds"))
+```
+
+# Library Size Normalization
+
+We first try the simplest scaling normalization strategy.
+
+```{r}
+lib_sf <- librarySizeFactors(sce)
+summary(lib_sf)
+hist(log10(lib_sf), xlab = "log10(size factor)", col = "grey80")
+```
+
+# Normalization by Deconvolution
+
+A deconvolution approach attempts to address the possibility of unbalanced differential expression between samples, which may be more applicable for scRNAseq analysis.
+
+```{r}
+# Cache the results.
+rds <- file.path(assets_dir, "cache", paste0("0", analysis_no), "deconv_norm.rds")
+if (file.exists(rds)) {
+  sce <- readRDS(rds)
+} else {
+  set.seed(1)
+  cluster <- quickCluster(sce, BPPARAM = MulticoreParam())
+  sce <- computeSumFactors(sce, cluster = cluster, min.mean = 0.1, BPPARAM = MulticoreParam())
+  rm(clusters)
+  sce <- logNormCounts(sce)
+  sce <- runPCA(sce, BPPARAM = MulticoreParam())
+  add_df <- data.frame(reducedDim(sce, "PCA")[ , 1:2])
+  names(add_df) <- paste0("pca", seq(ncol(add_df)))
+  colData(sce) <- cbind(colData(sce), pca1 = add_df$pca1, pca2 = add_df$pca2)
+  saveRDS(sce, rds)
+}
+
+red_dim_plot(sce, "pca1", "pca2", "batch")
+```
+
+# Seurat
+
+We also try Seurat's default approach.
+
+```{r}
+# Cache the results.
+rds <- file.path(assets_dir, "cache", paste0("0", analysis_no), "seurat.rds")
+if (file.exists(rds)) {
+  seurat <- readRDS(rds)
+} else {
+  seurat <- as.Seurat(sce)
+  seurat <- NormalizeData(seurat, verbose = FALSE)
+  seurat <- ScaleData(seurat, verbose = FALSE)
+  seurat <- RunPCA(seurat, features = rownames(seurat), verbose = FALSE)
+  add_df <- data.frame(Embeddings(seurat, reduction = "pca")[ , 1:2])
+  names(add_df) <- paste0("pca", seq(ncol(add_df)))
+  seurat$pca1 <- add_df$pca1
+  seurat$pca2 <- add_df$pca2
+  saveRDS(seurat, rds)
+}
+
+red_dim_plot(seurat, "pca1", "pca2", "batch")
+```
+
+# Exploration
+
+We view the contents of our various normalization methods.
+
+## SCE
+
+```{r}
+counts(sce)["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+logcounts(sce)["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+
+counts(sce)["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+logcounts(sce)["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+```
+
+## Seurat
+
+```{r}
+GetAssayData(seurat, slot = "counts")["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat, slot = "data")["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat, slot = "scale.data")["SST", names(which(counts(sce)["SST", ] > 0)[1])]
+
+GetAssayData(seurat, slot = "counts")["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat, slot = "data")["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+GetAssayData(seurat, slot = "scale.data")["MALAT1", names(which(counts(sce)["SST", ] > 0)[1])]
+```
+
+# References
+
+This is the concluding section of the document. Here we write relevant results to disk, output the `sessionInfo`, and create a bibliography for works cited.
+
+```{r}
+saveRDS(sce, file.path(results_dir, "data", paste0("0", analysis_no), "sce.rds"))
+saveRDS(seurat, file.path(results_dir, "data", paste0("0", analysis_no), "seurat.rds"))
+
+sessionInfo()
+```

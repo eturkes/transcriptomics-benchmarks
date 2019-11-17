@@ -32,3 +32,7 @@ rmarkdown::render(
   file.path(data_name, "02_qc.Rmd"),
   output_file = file.path("..", "..", "results", data_name, "02-qc.html")
 )
+rmarkdown::render(
+  file.path(data_name, "03_normalization.Rmd"),
+  output_file = file.path("..", "..", "results", data_name, "03-normalization.html")
+)

@@ -35,7 +35,7 @@ red_dim_plot <- function(data, x, y, color, type = NULL) {
   if ((class(data))[1] == "SingleCellExperiment") {
     gg_df <- data.frame(colData(data)[ , c(x, y, color)])
   } else if ((class(data))[1] == "Seurat") {
-    gg_df <- data.frame(seurat[[x]], seurat[[y]], seurat[color])
+    gg_df <- data.frame(seurat[[x]], seurat[[y]], seurat[[color]])
   }
   rownames(gg_df) <- NULL
   gg_df[[color]] <- factor(gg_df[[color]])
