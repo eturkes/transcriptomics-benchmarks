@@ -79,8 +79,8 @@ if (!dir.exists(file.path(results_dir, "data", paste0("0", analysis_no)))) {
 }
 
 packages <- c(
-  "conflicted", "BiocFileCache", "data.table", "DT", "SingleCellExperiment",
-  "biomaRt", "dplyr", "ggplot2", "ggrepel"
+  "conflicted", "BiocFileCache", "data.table", "DT", "SingleCellExperiment", "biomaRt", "dplyr",
+  "ggplot2", "ggrepel"
 )
 invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
 source(file.path(getwd(), "..", "utils.R"))
@@ -120,7 +120,8 @@ datatable(counts[1:5, 1:3])
 # However, because cluster 11 is incorrectly named in this table, we must correct that.
 # Also, as this file contained non-standard formatting, some manual editing was done for use in R.
 cluster <- fread(
-  file.path(assets_dir, "nmeth.4407-S10-edited.txt"), data.table = FALSE
+  file.path(assets_dir, "nmeth.4407-S10-edited.txt"),
+  data.table = FALSE
 )
 datatable(cluster[1:5, ])
 ```
@@ -129,7 +130,8 @@ datatable(cluster[1:5, ])
 
 ```{r}
 tsne <- fread(
-  file.path(tempdir(), download_name, paste0(download_name, ".tsne.txt.gz")), data.table = FALSE
+  file.path(tempdir(), download_name, paste0(download_name, ".tsne.txt.gz")),
+  data.table = FALSE
 )
 datatable(tsne[1:5, ])
 ```
@@ -221,8 +223,8 @@ if (file.exists(rds)) {
   mart <- useEnsembl(biomart = "ensembl", GRCh = 37, dataset = "hsapiens_gene_ensembl")
 
   attributes <- c(
-  "external_gene_name", "ensembl_gene_id", "entrezgene_id",
-  "hgnc_symbol", "description", "chromosome_name"
+    "external_gene_name", "ensembl_gene_id", "entrezgene_id",
+    "hgnc_symbol", "description", "chromosome_name"
   )
   gene_anno <- getBM(
     attributes = attributes, filters = "external_gene_name", values = rownames(sce), mart = mart
@@ -275,7 +277,10 @@ red_dim_plot(
 ## Samples
 
 ```{r}
-red_dim_plot(sce, paste0(data_name_stem, "_tsne", 1), paste0(data_name_stem, "_tsne", 2), "batch")
+red_dim_plot(
+  sce, paste0(data_name_stem, "_tsne", 1), paste0(data_name_stem, "_tsne", 2),
+  "batch"
+)
 ```
 
 # References
