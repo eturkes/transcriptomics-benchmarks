@@ -232,9 +232,7 @@ if (file.exists(rds)) {
   rm(mart)
   saveRDS(gene_anno, rds)
 }
-```
 
-```{r}
 # Remove genes not in the RNA-seq dataset.
 remove_genes <- which(!gene_anno$external_gene_name %in% rownames(sce))
 gene_anno <- gene_anno[-remove_genes, ]
