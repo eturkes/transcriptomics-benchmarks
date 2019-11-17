@@ -42,7 +42,7 @@ The data here is derived from @`r unlist(strsplit(getwd(), "/"))[6]` and will be
 
 ```{r}
 # Load in necessary boilerplate and libraries.
-##############################################
+# --------------------------------------------
 
 #    This file is part of transcriptomics-benchmarks.
 #    Copyright (C) 2019  Emir Turkes
@@ -79,9 +79,11 @@ if (!dir.exists(file.path(results_dir, "data", analysis_no))) {
 }
 
 packages <- c(
-  "conflicted", "BiocFileCache", "data.table", "DT", "SingleCellExperiment", "biomaRt", "dplyr"
+  "conflicted", "BiocFileCache", "data.table", "DT", "SingleCellExperiment",
+  "biomaRt", "dplyr", "ggplot2", "ggrepel"
 )
 invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
+source(file.path(getwd(), "..", "utils.R"))
 
 options(stringsAsFactors = FALSE)
 ```
@@ -176,7 +178,9 @@ cluster <- cluster[ , -c(2:3)]
 names(cluster) <- c(
   "sample", paste0(data_name_stem, "_cluster"), paste0(data_name_stem, "_cluster_name")
 )
-cluster$habib_cluster <- factor(cluster$habib_cluster)
+cluster[[paste0(data_name_stem, "_cluster")]] <- factor(
+  cluster[[paste0(data_name_stem, "_cluster")]]
+)
 cluster <- cluster[match(colData$sample, cluster$sample), ]
 rownames(cluster) <- NULL
 datatable(cluster[1:5, ])
@@ -253,6 +257,25 @@ sce <- sce[keep_genes, ]
 rowData(sce) <- gene_anno
 rm(gene_anno, gene_anno2)
 names(rowData(sce))
+```
+
+# Exploration
+
+We take a look at the data in its cleaned form.
+
+## Clusters
+
+```{r}
+red_dim_plot(
+  sce, paste0(data_name_stem, "_tsne", 1), paste0(data_name_stem, "_tsne", 2),
+  paste0(data_name_stem, "_cluster_name"), "cat"
+)
+```
+
+## Samples
+
+```{r}
+red_dim_plot(sce, paste0(data_name_stem, "_tsne", 1), paste0(data_name_stem, "_tsne", 2), "batch")
 ```
 
 # References
