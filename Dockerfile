@@ -20,10 +20,39 @@ FROM rocker/rstudio:3.6.1
 
 LABEL maintainer="Emir Turkes emir.turkes@eturkes.com"
 
-RUN Rscript \
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    zlib1g-dev \
+    libxml2-dev \
+    libpng-dev \
+ && Rscript \
     -e "install.packages('conflicted')" \
     -e "install.packages('rmarkdown')" \
     -e "install.packages('rprojroot')" \
- && rm -Rf /tmp/*.rds
+    -e "install.packages('data.table')" \
+    -e "install.packages('DT')" \
+    -e "install.packages('dplyr')" \
+    -e "install.packages('ggplot2')" \
+    -e "install.packages('ggrepel')" \
+    -e "install.packages('gridExtra')" \
+    -e "install.packages('robustbase')" \
+    -e "install.packages('Seurat')" \
+    -e "install.packages('future')" \
+    -e "install.packages('magrittr')" \
+    -e "install.packages('knitr')" \
+    -e "install.packages('Matrix')" \
+    -e "install.packages('BiocManager')" \
+    -e "BiocManager::install('BiocFileCache')" \
+    -e "BiocManager::install('SingleCellExperiment')" \
+    -e "BiocManager::install('biomaRt')" \
+    -e "BiocManager::install('scater')" \
+    -e "BiocManager::install('DropletUtils')" \
+    -e "BiocManager::install('scran')" \
+    -e "BiocManager::install('PCAtools')" \
+    -e "BiocManager::install('edgeR')" \
+ && apt-get clean \
+ && rm -Rf /var/lib/apt/lists/ \
+    /tmp/downloaded_packages/ \
+    /tmp/*.rds
 
 COPY user-settings /home/rstudio/.rstudio/monitored/user-settings/
