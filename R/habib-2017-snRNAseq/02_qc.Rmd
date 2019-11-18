@@ -164,7 +164,7 @@ logFC <- logged[ , 1] - logged[ , 2]
 abundance <- rowMeans(logged)
 rm(logged)
 
-plot(abundance, logFC, xlab = "Average Count", ylab="LogFC (lost/kept)", pch = 16)
+plot(abundance, logFC, xlab = "Average Count", ylab = "LogFC (lost/kept)", pch = 16)
 points(abundance[is_mito], logFC[is_mito], col = "dodgerblue", pch = 16)
 ```
 
