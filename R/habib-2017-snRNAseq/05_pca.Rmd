@@ -79,6 +79,7 @@ if (!dir.exists(file.path(results_dir, "data", paste0("0", analysis_no)))) {
 packages <- c("conflicted", "SingleCellExperiment", "PCAtools", "scran", "Seurat", "future")
 invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
 
+knitr::opts_chunk$set(fig.width = 8.5, fig.height = 7)
 options(stringsAsFactors = FALSE)
 plan("multiprocess") # Parallel processing for Seurat.
 
