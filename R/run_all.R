@@ -44,3 +44,7 @@ rmarkdown::render(
   file.path(data_name, "05_pca.Rmd"),
   output_file = file.path("..", "..", "results", data_name, "05-pca.html")
 )
+rmarkdown::render(
+  file.path(data_name, "06_nonlinear.Rmd"),
+  output_file = file.path("..", "..", "results", data_name, "06-nonlinear.html")
+)
