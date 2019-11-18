@@ -120,6 +120,7 @@ if (file.exists(rds)) {
   saveRDS(sce, rds)
 }
 
+red_dim_plot(sce, "pca1", "pca2", paste0(data_name_stem, "_cluster_name"))
 red_dim_plot(sce, "pca1", "pca2", "batch")
 ```
 
@@ -145,6 +146,7 @@ if (file.exists(rds)) {
   saveRDS(seurat, rds)
 }
 
+red_dim_plot(seurat, "pca1", "pca2", paste0(data_name_stem, "_cluster_name"))
 red_dim_plot(seurat, "pca1", "pca2", "batch")
 ```
 
