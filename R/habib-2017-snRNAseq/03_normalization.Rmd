@@ -111,7 +111,7 @@ if (file.exists(rds)) {
   set.seed(1)
   cluster <- quickCluster(sce, BPPARAM = MulticoreParam())
   sce <- computeSumFactors(sce, cluster = cluster, min.mean = 0.1, BPPARAM = MulticoreParam())
-  rm(clusters)
+  rm(cluster)
   sce <- logNormCounts(sce)
   set.seed(1)
   sce <- runPCA(sce, BPPARAM = MulticoreParam())
