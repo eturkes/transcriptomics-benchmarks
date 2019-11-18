@@ -1,3 +1,4 @@
+docs
 gdrive
 .git
 R
@@ -5,6 +6,7 @@ assets
 COPYING
 docker-compose.yml
 .gitignore
+hugo-ribo-genes.txt
 NOTICE
 README.md
 results
