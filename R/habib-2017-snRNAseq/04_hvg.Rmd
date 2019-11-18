@@ -1,0 +1,195 @@
+---
+title: '04 HVGs - `r unlist(strsplit(getwd(), "/"))[6]`'
+author:
+  - name: "Emir Turkes [emir.turkes@eturkes.com]"
+  - name: "UK Dementia Research Institute at UCL"
+date: '`r strftime(Sys.time(), format = "%B %d, %Y")`'
+bibliography: '../../`r unlist(strsplit(getwd(), "/"))[4]`.bib'
+link-citations: true
+output:
+  html_document:
+    code_folding: hide
+    number_sections: true
+    theme: lumen
+    highlight: haddock
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_file = file.path(
+    "..", "..", "results", unlist(strsplit(getwd(), "/"))[6], "04-hvg.html"
+  ))})
+---
+
+<style type="text/css">
+body {font-size: 16px;}
+h1.title {font-size: 35px;}
+h1 {font-size: 24px;}
+h2 {font-size: 22px;}
+h3 {font-size: 20px;}
+.toc-content {padding-left: 0px; padding-right: 0px;}
+div.tocify {width: 100%;}
+.tocify-subheader .tocify-item {font-size: 0.95em; padding-left: 25px; text-indent: 0;}
+div.main-container {max-width: none; width: 100%;}
+</style>
+
+*This file is a part of the [Transcriptomics Benchmarks Project](https://github.com/eturkes/transcriptomics-benchmarks), which aims to benchmark a wide variety of transcriptomics tools on real and simulated datasets.*
+
+In this particular document we assess methods for extracting highly variable genes or HVGs.
+The data here is derived from @`r unlist(strsplit(getwd(), "/"))[6]` and will be referenced using the name ``r unlist(strsplit(getwd(), "/"))[6]``.
+
+```{r}
+# Load in necessary boilerplate and libraries.
+# --------------------------------------------
+
+#    This file is part of transcriptomics-benchmarks.
+#    Copyright (C) 2019  Emir Turkes
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#    Emir Turkes can be contacted at emir.turkes@eturkes.com
+
+analysis_no <- 4
+data_name <- unlist(strsplit(getwd(), "/"))[6] # Name of dataset.
+data_name_stem <- unlist(strsplit(data_name, "-"))[1] # `data_name` up to the first hyphen.
+assets_dir <- file.path(getwd(), "..", "..", "assets", data_name) # Misc binaries and temp files.
+results_dir <- file.path(getwd(), "..", "..", "results", data_name)
+
+# Unique cache and results directory for each analysis number.
+if (!dir.exists(file.path(assets_dir, "cache", paste0("0", analysis_no)))) {
+  dir.create(file.path(assets_dir, "cache", paste0("0", analysis_no)), recursive = TRUE)
+}
+if (!dir.exists(file.path(results_dir, "data", paste0("0", analysis_no)))) {
+  dir.create(file.path(results_dir, "data", paste0("0", analysis_no)), recursive = TRUE)
+}
+
+packages <- c(
+  "conflicted", "SingleCellExperiment", "scater", "scran", "data.table", "DT", "Seurat", "future"
+)
+invisible(suppressPackageStartupMessages(lapply(packages, library, character.only = TRUE)))
+source(file.path(getwd(), "..", "utils.R"))
+
+options(stringsAsFactors = FALSE)
+plan("multiprocess") # Parallel processing for Seurat.
+
+# Use output of previous analysis.
+sce <- readRDS(file.path(results_dir, "data", paste0("0", analysis_no - 1), "sce.rds"))
+```
+
+First, let's take a look at some feature-level summary statistics.
+
+```{r}
+plotHighestExprs(sce, colour_cells_by = "batch")
+```
+
+# Technical Noise Quantification
+
+By modeling the Poisson technical noise and blocking on batch, we get the top 10% of genes with the largest biological component values.
+
+```{r}
+set.seed(1)
+dec <- modelGeneVarByPoisson(sce, block = sce$batch)
+top_dec <- as.data.table(dec[order(dec$bio, decreasing = TRUE), 1:6][1:10, ])
+rownames(top_dec) <- rownames(dec[order(dec$bio, decreasing = TRUE), 1:6][1:10, ])
+datatable_custom(top_dec)
+
+plotExpression(sce, features = rownames(top_dec)) +
+  stat_summary(
+    fun.y = median, fun.ymin = median, fun.ymax = median,
+    geom = "crossbar", width = 0.3, alpha = 0.8
+  )
+```
+
+```{r, fig.height = 20}
+rm(top_dec)
+
+par(mfrow = c(11, 2))
+blocked_stats <- dec$per.block
+for (i in colnames(blocked_stats)) {
+  current <- blocked_stats[[i]]
+  plot(
+    current$mean, current$total, main = i, pch = 16,
+    cex = 0.5, xlab = "Mean of log-expression", ylab = "Variance of log-expression")
+  curve_fit <- metadata(current)
+  points(curve_fit$mean, curve_fit$var, col = "red", pch = 16)
+  curve(curve_fit$trend(x), col = "dodgerblue", add = TRUE, lwd = 2)}
+```
+
+```{r}
+hvg <- getTopHVGs(dec, prop = 0.1)
+hvg_sce <- sce[hvg, ]
+altExp(hvg_sce, "orig") <- sce
+rm(blocked_stats, current, curve_fit)
+dim(hvg_sce)
+
+# Cache the results.
+rds <- file.path(assets_dir, "cache", paste0("0", analysis_no), "pca.rds")
+if (file.exists(rds)) {
+  hvg_sce <- readRDS(rds)
+} else {
+  set.seed(1)
+  hvg_sce <- runPCA(hvg_sce, BPPARAM = MulticoreParam())
+  add_df <- data.frame(reducedDim(hvg_sce, "PCA")[ , 1:2])
+  names(add_df) <- paste0("hvg_pca", seq(ncol(add_df)))
+  colData(hvg_sce) <- cbind(
+    colData(hvg_sce), hvg_pca1 = add_df$hvg_pca1, hvg_pca2 = add_df$hvg_pca2
+  )
+  saveRDS(hvg_sce, rds)
+}
+
+red_dim_plot(hvg_sce, "hvg_pca1", "hvg_pca2", paste0(data_name_stem, "_cluster_name"))
+red_dim_plot(hvg_sce, "hvg_pca1", "hvg_pca2", "batch")
+```
+
+# sctransform
+
+An advanced normalization method available in Seurat that also returns HVGs (3,000 by default) as well as regression against confounding factors.
+
+```{r}
+# Cache the results.
+rds <- file.path(assets_dir, "cache", paste0("0", analysis_no), "sctransform.rds")
+if (file.exists(rds)) {
+  seurat <- readRDS(rds)
+} else {
+  seurat <- as.Seurat(sce, verbose = FALSE)
+  seurat <- SCTransform(
+    seurat, vars.to.regress = c("subsets_mito_percent", "subsets_ribo_percent"), verbose = FALSE
+  )
+  seurat <- RunPCA(seurat, verbose = FALSE)
+  add_df <- data.frame(Embeddings(seurat, reduction = "pca")[ , 1:2])
+  names(add_df) <- paste0("hvg_pca", seq(ncol(add_df)))
+  seurat$hvg_pca1 <- add_df$hvg_pca1
+  seurat$hvg_pca2 <- add_df$hvg_pca2
+  rm(add_df)
+  saveRDS(seurat, rds)
+}
+rm(sce)
+
+red_dim_plot(seurat, "hvg_pca1", "hvg_pca2", paste0(data_name_stem, "_cluster_name"))
+red_dim_plot(seurat, "hvg_pca1", "hvg_pca2", "batch")
+```
+
+# References
+
+This is the concluding section of the document. Here we write relevant results to disk, output the `sessionInfo`, and create a bibliography for works cited.
+
+```{r}
+saveRDS(hvg_sce, file.path(results_dir, "data", paste0("0", analysis_no), "sce.rds"))
+saveRDS(seurat, file.path(results_dir, "data", paste0("0", analysis_no), "seurat.rds"))
+saveRDS(dec, file.path(results_dir, "data", paste0("0", analysis_no), "dec.rds"))
+
+sessionInfo()
+```
