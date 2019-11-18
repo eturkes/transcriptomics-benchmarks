@@ -135,7 +135,7 @@ red_dim_plot(sce, "umap1", "umap2", "batch")
 # Cache the results.
 rds <- file.path(assets_dir, "cache", paste0("0", analysis_no), "nonlinear_seurat.rds")
 if (file.exists(rds)) {
-  sce <- readRDS(rds)
+  seurat <- readRDS(rds)
 } else {
   seurat <- RunTSNE(seurat, dims = 1:13, verbose = FALSE)
   seurat <- RunUMAP(seurat, dims = 1:13, verbose = FALSE)
