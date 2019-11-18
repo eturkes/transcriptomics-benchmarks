@@ -22,3 +22,23 @@
 #### *This analysis is a work-in-progress*
 
 A benchmarking of the many tools in the transcriptomics ecosystem
+
+The up-to-date R Markdown HTML reports can be found [here](https://drive.google.com/drive/folders/1FPeK_--64SKMURSTrCTSCTMP7tlBPLZS?usp=sharing). 
+After downloading, they can be opened in a web browser.
+
+In order to reproduce the report, prerequisite data must be downloaded from my [Google Drive](https://drive.google.com/drive/folders/1PC_pOwTKxEiuP5diZVQ6gm85aBKcq4Zx?usp=sharing).
+After downloading and unzipping, move the directory to the project root and rename it as `gdrive`.
+
+A Docker image for this project is available from [DockerHub](https://hub.docker.com/r/eturkes/transcriptomics-benchmarks).
+This is the recommended way to reproduce and explore the project.
+
+To run all scripts and generate an HTML report in the `results` directory, just run:
+```
+docker-compose run all
+```
+
+To open RStudio, run:
+```
+docker-compose up rstudio
+```
+It will be available in your web browser at the address [localhost:8791](http://localhost:8791).
