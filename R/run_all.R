@@ -19,6 +19,11 @@
 # This script runs all files to perform the analysis.
 # Sections can be commented out as needed.
 
+# NOTE: This script currently has a nasty bug where memory usage ballons if rmarkdown:render()
+# calls are run in sequence.
+# The workaround for now is to comment out calls so that they are run one-by-one.
+# TODO: Fix this bug.
+
 setwd(dirname(parent.frame(2)$ofile)) # Move to location of this file.
 
 
