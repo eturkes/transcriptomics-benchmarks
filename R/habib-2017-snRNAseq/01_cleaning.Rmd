@@ -95,10 +95,13 @@ This section provides a brief look at the raw data before manipulation.
 
 ```{r}
 # Download data using `BiocFileCache`.
-data <- bfcrpath(BiocFileCache(data_dir, ask = FALSE), file.path(
-  "https://storage.googleapis.com/gtex_additional_datasets/single_cell_data",
-  paste0(download_name, ".tar")
-))
+data <- bfcrpath(
+  BiocFileCache(data_dir, ask = FALSE),
+  file.path(
+    "https://storage.googleapis.com/gtex_additional_datasets/single_cell_data",
+    paste0(download_name, ".tar")
+  )
+)
 untar(data, exdir = tempdir())
 ```
 
